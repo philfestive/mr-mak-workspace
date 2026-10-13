@@ -1,0 +1,337 @@
+{
+  "schema": "mrmak.character-library/v1",
+  "sources": [
+    {
+      "id": "lab-brief",
+      "label": "Character Lab assignment and owner-requested organization",
+      "path": "projects/character-lab/tasks/T006/brief.md",
+      "status": "Current setup scope; no first personal character or receiving project selected"
+    },
+    {
+      "id": "arty-board",
+      "label": "Current Arty style authority board",
+      "path": "C:/Dev/studio/arty/RACE-STYLE-AUTHORITY-BOARD.md",
+      "status": "Inspected 2026-10-12: nine working IDs after the 2026-10-10 retirement; terminology and preparation, not production acceptance. Medium and family are local browse groups, not exclusive source categories or adopted pipelines. Cartoon remains the umbrella; clay, toy and ceramic can overlap it."
+    },
+    {
+      "id": "arty-download",
+      "label": "Supplied Arty style library, original download",
+      "path": "C:/Users/haslo/Downloads/ARTY-STYLE-LIBRARY (1).md",
+      "status": "2026-10-09 NOT ADOPTED interpretation draft; ten-token historical snapshot predates Dusk label retirement; linked source package is incomplete"
+    },
+    {
+      "id": "arty-import",
+      "label": "Retained local copy of the supplied Arty draft",
+      "path": "projects/character-lab/references/arty-style-library-source.md",
+      "status": "Raw reference copy; original draft status and relative links preserved, not a replacement authority board or complete source package"
+    },
+    {
+      "id": "arty-continuity",
+      "label": "Arty continuity and current receiving limits",
+      "path": "C:/Dev/studio/arty/arty-continuity.md",
+      "status": "Inspected 2026-10-12; current 2026-10-11 notes distinguish selected study scope, retained evidence and pending receiver capture"
+    },
+    {
+      "id": "studio-guide",
+      "label": "Studio source ownership guide",
+      "path": "C:/Dev/studio/README.md",
+      "status": "Written studies stay in Studio; code and large media retain their established project/package homes"
+    },
+    {
+      "id": "pixel-project",
+      "label": "Character Creator 2D project entry",
+      "path": "C:/Dev/CharacterCreatorPixel2d/README.md",
+      "status": "Inspected 2026-10-12; the owning README records a 2026-10-08 documentation review, not a fresh runtime or complete Parts/save proof"
+    },
+    {
+      "id": "pixel-model-contract",
+      "label": "Pixel character family and body contract",
+      "path": "C:/Dev/CharacterCreatorPixel2d/docs/architecture/CHARACTER_MODEL_STANDARD.md",
+      "status": "Canonical model vocabulary: human_folk.compact and lpc_adventurer.standard are shipped family/body identities, not art-style IDs; lpc_adventurer.thick is planned"
+    },
+    {
+      "id": "godot-project",
+      "label": "GodotWorld3d project entry and boundaries",
+      "path": "C:/Dev/GodotWorld3d/AGENTS.md",
+      "status": "Existing 3D receiver and typed visual resources; current implementation, queue and proof stay with the owning project. Historical counts and lifecycle summaries are not fresh certification."
+    }
+  ],
+  "styles": [
+    {
+      "id": "pixel-art",
+      "name": "Pixel art",
+      "medium": "2d",
+      "family": "pixel",
+      "context": "Character authoring with separate Human Folk and LPC Adventurer contracts",
+      "status": "Existing external direction; new lab application open",
+      "aliases": [],
+      "notes": "Local browse label, not an exported model ID. Family, body variant, frame layout, palette and animation compatibility remain separate. Edu's documented consumer accepts Human Folk compact schema-v2 JSON; LPC support does not establish consumer compatibility.",
+      "source_id": "pixel-project"
+    },
+    {
+      "id": "bright_cartoon",
+      "name": "Bright Cartoon",
+      "medium": "3d",
+      "family": "cartoon",
+      "context": "Human world; character finish remains a separate question",
+      "status": "Working terminology and trial preparation",
+      "aliases": ["shar-bright"],
+      "notes": "Rounded practical construction and broad readable groups. Local 3D browse placement does not make the direction medium-exclusive. Human environment measurements do not complete character materials. Pastoral, frontier and shadowed are proposed zone labels, not extra style IDs or approved models.",
+      "source_id": "arty-board"
+    },
+    {
+      "id": "noir_graphic",
+      "name": "Noir Graphic",
+      "medium": "3d",
+      "family": "cartoon",
+      "context": "Night Elf characters and environments",
+      "status": "Working terminology and trial preparation",
+      "aliases": ["sly-purple"],
+      "notes": "Dark but colourful graphic construction, sweep, taper and deliberate negative space. The source direction is not medium-exclusive; local 3D grouping selects no renderer. Outlines remain parked with an owner-level conflict; clay form studies do not mandate clay surfaces.",
+      "source_id": "arty-board"
+    },
+    {
+      "id": "bright_clay",
+      "name": "Bright Clay",
+      "medium": "3d",
+      "family": "clay",
+      "context": "Dwarf",
+      "status": "Working trial direction; scoped studies retained",
+      "aliases": ["playdoh-bright"],
+      "notes": "Bright pressed/formed masses. Marker-04, C2 and Shelf B KEEP remain bounded study decisions, not an accepted production dialect. Bright/dark browsing is useful, while plush_clay remains a separate source term. Clay appearance does not select stop-motion animation or a frame rate.",
+      "source_id": "arty-board"
+    },
+    {
+      "id": "dark_clay",
+      "name": "Dark Clay",
+      "medium": "3d",
+      "family": "clay",
+      "context": "Troll; exact character and zone scope open",
+      "status": "Working trial direction; scope awaits Q120",
+      "aliases": ["neverhood-dark"],
+      "notes": "Darker clay is a retained trial name. Material, palette, mood and territory are separate open application questions. No Troll studio is selected by this index, and the name does not mandate black surfaces, horror or a specific animation technique.",
+      "source_id": "arty-board"
+    },
+    {
+      "id": "plush_clay",
+      "name": "Plush Clay",
+      "medium": "3d",
+      "family": "clay",
+      "context": "Tauren",
+      "status": "Working trial direction",
+      "aliases": [],
+      "notes": "Plush-informed full, gentle clay volumes. Preserve this third clay vocabulary entry while the requested bright/dark primary browse organization is refined. Literal fur, felt, seams, shaders and deformation are unselected; the term does not define every environment asset.",
+      "source_id": "arty-board"
+    },
+    {
+      "id": "bold_toy",
+      "name": "Bold Toy",
+      "medium": "3d",
+      "family": "toy",
+      "context": "Orc",
+      "status": "Working trial direction",
+      "aliases": ["cereal-orc"],
+      "notes": "Bold convex cartoon/toy construction. Historical matte and shape constraints remain unless specifically replaced. The word toy selects neither glossy vinyl nor a renderer, palette, trained model or production material.",
+      "source_id": "arty-board"
+    },
+    {
+      "id": "turned_toy",
+      "name": "Turned Toy",
+      "medium": "3d",
+      "family": "toy",
+      "context": "Gnome",
+      "status": "Working trial direction; brick-free",
+      "aliases": [],
+      "notes": "Turned-part profiles, local axes and fitted repetition. Gnome remains brick-free and separate from goblin-town construction. Profile features need not become independent components; gears, articulation, wood grain and final finish remain separate questions.",
+      "source_id": "arty-board"
+    },
+    {
+      "id": "mended_ceramic",
+      "name": "Mended Ceramic",
+      "medium": "3d",
+      "family": "ceramic",
+      "context": "Undead repaired-keeper character register",
+      "status": "Working trial direction; retained character register",
+      "aliases": [],
+      "notes": "Cared-for, visibly repaired ceramic-like construction; anti-horror and no green. The declined gothic puppet is not a parallel current choice. Exact ceramic, palette, repair material, gloss, environment application and production route remain open.",
+      "source_id": "arty-board"
+    },
+    {
+      "id": "studded_brick",
+      "name": "Studded Brick",
+      "medium": "3d",
+      "family": "brick",
+      "context": "Goblin-run neutral towns and their props",
+      "status": "Working terminology and trial preparation",
+      "aliases": [],
+      "notes": "Studded construction-toy assemblies. This is a place/prop scope, not a ninth playable race. Gnome remains brick-free; goblin NPCs in another race's chunk follow that chunk's style. Brand dimensions, snap mechanics, batching and final plastic finish are not established by the label.",
+      "source_id": "arty-board"
+    },
+    {
+      "id": "bright_cartoon_dusk",
+      "name": "Bright Cartoon Dusk (historical)",
+      "medium": "3d",
+      "family": "cartoon",
+      "context": "Historical Human/Duskwood test label",
+      "status": "Retired from the active list on 2026-10-10",
+      "aliases": [],
+      "notes": "Searchable historical vocabulary from the supplied draft. Do not start a fourth base trial, new asset version or trained-model track from this retired name. Duskwood now uses Human construction plus a proposed shadowed zone variant; older Human-dark evidence remains retained.",
+      "source_id": "arty-board"
+    }
+  ],
+  "projects": [
+    {
+      "id": "character-lab",
+      "name": "Character Lab",
+      "root": "E:/Dev/mr-mak-workspace-main/projects/character-lab",
+      "role": "Refine ideas and versions here; catalog.json alone owns actual character identities, revision lineage and stage selections",
+      "subprojects": [
+        {
+          "id": "character-sources",
+          "name": "Characters and immutable revisions",
+          "scope": "A stable source home per character; project/style/context views link to it",
+          "status": "Setup exists; first personal character remains open",
+          "path": "projects/character-lab/characters"
+        },
+        {
+          "id": "round-template",
+          "name": "Idea and version rounds",
+          "scope": "Question, exact base, keep/change, alternatives, observation, choice and next deliverable",
+          "status": "Reusable setup template; no selected design implied",
+          "path": "projects/character-lab/templates/round.md"
+        },
+        {
+          "id": "model-destinations",
+          "name": "Editable sources and named deliveries",
+          "scope": "Model source, exact exports, receiving project/owner, consumer and evidence",
+          "status": "Reusable setup contract; no model delivery registered",
+          "path": "projects/character-lab/templates/model-handoff.json"
+        }
+      ]
+    },
+    {
+      "id": "arty",
+      "name": "Arty studies",
+      "root": "C:/Dev/studio/arty",
+      "role": "Existing written art studies and source bindings; CX20 owns its local records and CX30 owns Godot receiving. Link retained packages instead of duplicating them here.",
+      "subprojects": [
+        {
+          "id": "human-trial",
+          "name": "Human / Bright Cartoon trial",
+          "scope": "One of three written trials across the shared nine comparison subjects",
+          "status": "Written preparation; unchanged crate selected for a bounded study, receiver capture pending in Arty continuity",
+          "path": "C:/Dev/studio/arty/work/trial-style-preparation-01/BRIEF.md"
+        },
+        {
+          "id": "night-elf-trial",
+          "name": "Night Elf / Noir Graphic trial",
+          "scope": "One of three written trials across the shared nine comparison subjects",
+          "status": "Written preparation; retained construction studies have their own limited KEEP decisions",
+          "path": "C:/Dev/studio/arty/work/trial-style-preparation-01/BRIEF.md"
+        },
+        {
+          "id": "goblin-town-trial",
+          "name": "Goblin towns / Studded Brick trial",
+          "scope": "Neutral-town and prop construction; shared comparison subjects, not a playable-race expansion",
+          "status": "Written preparation; no production style or installed model set implied",
+          "path": "C:/Dev/studio/arty/work/trial-style-preparation-01/BRIEF.md"
+        },
+        {
+          "id": "human-zone-contexts",
+          "name": "Elwynn, Westfall and Duskwood contexts",
+          "scope": "Human construction plus proposed pastoral, frontier and shadowed variations; document scopes, not new folders or runtime zone IDs",
+          "status": "Recommended zone naming; detailed looks and production treatment open",
+          "path": "C:/Dev/studio/arty/RACE-STYLE-AUTHORITY-BOARD.md"
+        },
+        {
+          "id": "construction-reuse",
+          "name": "Reusable construction blocks",
+          "scope": "Construction family, biome, culture, condition and mood remain distinct planning axes",
+          "status": "Retained research and proposals; no universal Classic assignment",
+          "path": "C:/Dev/studio/arty/work/reusable-building-blocks/RETURN.md"
+        }
+      ]
+    },
+    {
+      "id": "godot-world-3d",
+      "name": "GodotWorld3d",
+      "root": "C:/Dev/GodotWorld3d",
+      "role": "Existing 3D receiving project; implementation ownership, execution queue and current runtime proof stay there. This browse index does not choose it as the new lab's receiver.",
+      "subprojects": [
+        {
+          "id": "prop-imports",
+          "name": "Imported Bright Frontier props",
+          "scope": "Existing shipping crate, signpost, barrel, benches and retained kits; exact source/export/consumer bindings belong to their packages",
+          "status": "Physical folders inspected; fresh rendering and production acceptance not checked",
+          "path": "C:/Dev/GodotWorld3d/assets/bright_frontier/props"
+        },
+        {
+          "id": "typed-visual-catalog",
+          "name": "Typed visual catalog and construction layers",
+          "scope": "Styles/surfaces, primitives, compounds, archetypes, catalog records and visuals are separate resource layers",
+          "status": "Physical resource folders inspected; resource existence is not runtime qualification",
+          "path": "C:/Dev/GodotWorld3d/resources/clay"
+        },
+        {
+          "id": "retained-style-profiles",
+          "name": "Retained Godot style profiles",
+          "scope": "Existing chicken_run.tres and prairie_townfolk.tres keep their native identifiers; they are not renamed to Arty working labels",
+          "status": "Profile files inspected; current role and style-family details remain in the receiver",
+          "path": "C:/Dev/GodotWorld3d/resources/clay/styles"
+        },
+        {
+          "id": "asset-pipeline-lanes",
+          "name": "Art direction, source, processed and runtime lanes",
+          "scope": "The four existing addons/assets folders are distinct from root assets/bright_frontier prop imports",
+          "status": "Physical lane folders inspected; a scaffold does not establish completed pipeline stages",
+          "path": "C:/Dev/GodotWorld3d/addons/assets"
+        },
+        {
+          "id": "classic-project-scope",
+          "name": "Classic-inspired project and regional scope",
+          "scope": "Race/culture, place, asset kind and construction route are separate browse dimensions; current design and dispatch decisions stay in the owning queue",
+          "status": "External project scope; no new region, schema, folder or game selected here",
+          "path": "C:/Dev/GodotWorld3d/Docs/planning/CURRENT_EXECUTION_QUEUE.md"
+        }
+      ]
+    },
+    {
+      "id": "pixel-character-creator",
+      "name": "Character Creator 2D",
+      "root": "C:/Dev/CharacterCreatorPixel2d",
+      "role": "Existing pixel character producer with separate family/body/rendering contracts. Sources remain there; receiving compatibility is checked against the exact consumer contract.",
+      "subprojects": [
+        {
+          "id": "human-folk-compact",
+          "name": "Human Folk / Compact",
+          "scope": "Preset/Quick flow; canonical model identity human_folk.compact, separate from a visual-style label",
+          "status": "Shipped model vocabulary and existing source; fresh runtime not reverified",
+          "path": "C:/Dev/CharacterCreatorPixel2d/simple_creator"
+        },
+        {
+          "id": "lpc-adventurer-standard",
+          "name": "LPC Adventurer / Standard",
+          "scope": "Layered LPC flow; canonical model identity lpc_adventurer.standard with its own frame/layer contract",
+          "status": "Shipped model vocabulary and existing source; Edu consumer compatibility remains separate",
+          "path": "C:/Dev/CharacterCreatorPixel2d/lpc_creator"
+        },
+        {
+          "id": "shared-parts",
+          "name": "Shared Parts and palette system",
+          "scope": "CharacterPart registration, palette encoding and compositor infrastructure; UI themes are separate from asset styles",
+          "status": "Existing source; Parts and save/gallery fidelity remain partial under the producer's rubric",
+          "path": "C:/Dev/CharacterCreatorPixel2d/shared"
+        }
+      ]
+    }
+  ],
+  "future_directions": [
+    {
+      "id": "edgy-2d",
+      "name": "Edgy 2D directions",
+      "medium": "2d",
+      "status": "Owner idea; visual direction and pipeline open",
+      "notes": "Refine the intended look with references before choosing a preset. Name frame/grid, palette, body/renderer, animation and target-consumer requirements for the selected output; existing pixel families do not automatically support a new style."
+    }
+  ]
+}

@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from 'react'
-import type { DesktopState, Preview, ServiceEvent } from './types'
+import type { CodexAccount, CodexLogin, DesktopState, Preview, ServiceEvent } from './types'
 
 const params = new URLSearchParams(window.location.search)
 export const isDesktop = params.get('desktop') === '1'
@@ -16,6 +16,8 @@ const events = new Set<(event: ServiceEvent) => void>()
 let state: DesktopState = {
   ready: false, connected: false, error: null, repo: '', contentBase: '', agents: [], sessions: [], selectedId: null, notices: [],
   settings: { defaultAgent: 'codex', defaultBypass: false }, coordinator: 'idle', voice: { configured: false, owner: null }, operations: [], preview: null, voiceHistory: [],
+  codexAccount: { status: 'unknown', type: null, email: null, planType: null },
+  codexLogin: { status: 'idle', url: null, error: null },
 }
 let socket: WebSocket | null = null
 let started = false
@@ -25,6 +27,10 @@ export const desktopState = () => state
 export const useDesktop = () => useSyncExternalStore(listener => { listeners.add(listener); return () => listeners.delete(listener) }, desktopState)
 export const onServiceEvent = (listener: (event: ServiceEvent) => void) => { events.add(listener); return () => { events.delete(listener) } }
 export const setPreview = (preview: Preview | null) => update({ preview })
+export const applyCodexConnection = (account: CodexAccount, voiceConfigured: boolean) => update({ codexAccount: account, voice: { ...state.voice, configured: voiceConfigured } })
+export const applyVoiceSetup = (configured: boolean) => { update({ voice: { ...state.voice, configured } }); events.forEach(listener => listener({ type: 'voice-status', configured })) }
+export const openVoiceSetup = () => window.dispatchEvent(new Event('mrmak-open-settings'))
+export const applyCodexLogin = (codexLogin: CodexLogin) => { update({ codexLogin, ...(codexLogin.account ? { codexAccount: codexLogin.account } : {}) }); events.forEach(listener => listener({ type: 'coordinator-login', login: codexLogin })) }
 export const dismissError = () => update({ error: null })
 export const reportError = (error: unknown) => update({ error: error instanceof Error ? error.message : String(error) })
 export const contentUrl = (relative: string) => isDesktop ? `${state.contentBase}${relative}` : relative
@@ -94,7 +100,7 @@ function connect() {
   socket.onopen = () => socket?.send(JSON.stringify({ type: 'auth', token, clientId, surface }))
   socket.onmessage = ({ data }) => {
     const event = JSON.parse(data) as ServiceEvent
-    if (event.type === 'connected') update({ connected: true, sessions: event.sessions || state.sessions, selectedId: event.selectedId ?? state.selectedId, coordinator: event.state || state.coordinator, error: null })
+    if (event.type === 'connected') update({ connected: true, sessions: event.sessions || state.sessions, selectedId: event.selectedId ?? state.selectedId, coordinator: event.state || state.coordinator, codexAccount: event.account || state.codexAccount, codexLogin: event.login || state.codexLogin, error: null })
     if (event.type === 'selection') update({ selectedId: event.selectedId || null })
     if (event.type === 'session' && event.session) {
       const next = event.session
@@ -106,6 +112,9 @@ function connect() {
     }
     if (event.type === 'service-error') reportError(event.error || 'Connection error')
     if (event.type === 'coordinator-state') update({ coordinator: event.state || 'idle' })
+    if (event.type === 'coordinator-login' && event.login) applyCodexLogin(event.login)
+    if (event.type === 'coordinator-account' && event.account) update({ codexAccount: event.account })
+    if (event.type === 'voice-status' && typeof event.configured === 'boolean') update({ voice: { ...state.voice, configured: event.configured } })
     if (event.type === 'coordinator-result' && event.operation) {
       const operation = event.operation
       update({ operations: [...state.operations.filter(item => item.id !== operation.id), operation].slice(-50) })

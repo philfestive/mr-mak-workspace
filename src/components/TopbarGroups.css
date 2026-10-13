@@ -1,0 +1,112 @@
+.topbar.topbar-grouped {
+  align-items: flex-start;
+}
+
+.topbar.topbar-grouped .breadcrumb {
+  width: 100%;
+  min-height: 24px;
+}
+
+.topbar.topbar-grouped .topbar-right {
+  width: 100%;
+  margin-left: 0;
+  align-items: flex-start;
+}
+
+.workspace-tab-navigation {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.workspace-tab-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+}
+
+.workspace-tab-label {
+  flex: 0 0 116px;
+  padding-top: 8px;
+  color: var(--text-dim);
+  font-size: 0.62rem;
+  line-height: 1.5;
+}
+
+.workspace-section-tabs,
+.topbar.topbar-grouped .workspace-document-tabs.step-tabs {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  gap: 5px;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.workspace-section-tab,
+.topbar.topbar-grouped .workspace-document-tabs .step-tab {
+  min-height: 32px;
+  max-width: 100%;
+  padding: 6px 10px;
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface-1);
+  color: var(--text-dim);
+  font: inherit;
+  font-size: 0.74rem;
+  line-height: 1.45;
+  text-align: left;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+  transition: background var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
+}
+
+.workspace-section-tab:hover,
+.topbar.topbar-grouped .workspace-document-tabs .step-tab:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.workspace-section-tab.active {
+  border-color: var(--pink);
+  background: var(--pink-dim);
+  color: var(--pink-bright);
+}
+
+.topbar.topbar-grouped .workspace-document-tabs .step-tab.active {
+  border-color: var(--hairline-strong);
+  background: var(--surface-3);
+  color: var(--text-bright);
+}
+
+.workspace-section-tab:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.topbar.topbar-grouped .open-ext {
+  flex-shrink: 0;
+}
+
+@media (max-width: 640px) {
+  .workspace-tab-row {
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .workspace-tab-label {
+    flex: none;
+    padding-top: 0;
+  }
+
+  .workspace-section-tabs,
+  .topbar.topbar-grouped .workspace-document-tabs.step-tabs {
+    width: 100%;
+  }
+}

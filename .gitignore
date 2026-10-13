@@ -41,3 +41,6 @@ Thumbs.db
 
 # graft's local graph cache — regenerable, not committed (run `graft build`).
 /graft/
+
+# Local compatibility junction; canonical Home is versioned once.
+/workspace/2026-10-12_team-hub/

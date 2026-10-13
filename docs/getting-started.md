@@ -89,12 +89,39 @@ Use Files to inspect `projects`, `inbox`, `knowledge`, `processes` and the skill
 folders. A Markdown file opens in Preview; switch to Edit and Save to change it.
 The Help button opens a quick guide without creating a new chat.
 
+## Switching the Codex account
+
+Switch the login used by Codex CLI, then open Mr. Mak Conversation or Settings
+and choose **Refresh Codex connection**. The displayed account comes from the
+new Codex app-server connection. Refresh starts a new coordinator conversation
+and preserves managed worker chats and recorded activity. Finish the current
+request and stop voice before refreshing.
+
+Use **Sign in / switch account** beside Refresh to open Codex's browser sign-in.
+Finish there; Mr. Mak reconnects automatically after the CLI confirms success.
+The UI includes a link if the browser did not open and a Cancel sign-in button.
+Switching updates the shared CLI login; existing worker chats keep running.
+Finish Mr. Mak's current request and stop voice before switching.
+
+Codex uses the credentials in its configured CODEX_HOME. Switching only a
+website account or a separate Codex profile does not change that credential
+source. Use the displayed account to check the result. Voice uses the repository
+OpenAI API key separately; a Codex refresh does not add or replace that key.
+
 ## Optional voice
 
-Copy `.env.example` to `.env` and add your own `OPENAI_API_KEY` to enable the
-OpenAI Live connection. Never commit that file. Sign in to Codex for the
-coordinator. Its model follows your account configuration; an optional
-`MRMAK_COORDINATOR_MODEL` overrides it. Model access depends on your account.
+Open **Settings -> Voice setup**, or choose **Set up voice** after pressing
+Talk to Mak. Use the OpenAI API key link, paste your key into the masked field
+and choose **Save voice key**. The key is saved only in this workspace's `.env`
+and the field clears afterward. Never paste it into a chat or commit that file.
+**Check voice setup** rereads key presence without starting voice or reconnecting
+Codex. Press Talk to Mak when ready; that connection verifies live API access.
+
+You can still configure `OPENAI_API_KEY` manually in `.env`. An inherited
+environment key is identified separately. Switching Codex accounts does not
+replace the voice key. Sign in to Codex for the coordinator; its model follows
+your account configuration. An optional `MRMAK_COORDINATOR_MODEL` overrides it,
+and model access depends on your account.
 
 Voice requests can focus a chat, inspect a report, update a card or hand a larger
 task to a worker. Direct actions stay quick; a visible worker handles deliverables.

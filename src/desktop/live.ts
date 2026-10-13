@@ -1,12 +1,12 @@
-import { api, clientId, desktopState, surface } from './client'
+import { api, applyVoiceSetup, clientId, desktopState, surface } from './client'
 import type { Operation } from './types'
 
 export interface Caption { role: 'user' | 'assistant'; text: string; start: number; end: number }
-export interface LiveState { status: 'off' | 'connecting' | 'live' | 'closing' | 'error'; error: string; captions: Caption[]; startedAt: number | null; audible: boolean }
+export interface LiveState { status: 'off' | 'connecting' | 'live' | 'closing' | 'error'; error: string; captions: Caption[]; startedAt: number | null; audible: boolean; needsSetup: boolean }
 interface LiveEvent { type: string; delta?: string; start_ms?: number; end_ms?: number; offset_ms?: number; delegation?: { id: string }; session?: { id: string }; error?: { message?: string }; message?: string }
 
 export class LiveVoice {
-  state: LiveState = { status: 'off', error: '', captions: [], startedAt: null, audible: true }
+  state: LiveState = { status: 'off', error: '', captions: [], startedAt: null, audible: true, needsSetup: false }
   private peer: RTCPeerConnection | null = null
   private channel: RTCDataChannel | null = null
   private microphone: MediaStream | null = null
@@ -26,7 +26,7 @@ export class LiveVoice {
   private tasks = new Set<number>()
   subscribe = (callback: () => void) => { this.listeners.add(callback); return () => { this.listeners.delete(callback) } }
   snapshot = () => this.state
-  dismissError() { this.update({ error: '', ...(this.state.status === 'error' ? { status: 'off' as const } : {}) }) }
+  dismissError() { this.update({ error: '', needsSetup: false, ...(this.state.status === 'error' ? { status: 'off' as const } : {}) }) }
   private update(patch: Partial<LiveState>) { this.state = { ...this.state, ...patch }; this.listeners.forEach(listener => listener()) }
   private event(value: unknown) { if (this.ready && this.channel?.readyState === 'open') this.channel.send(JSON.stringify(value)) }
   context() {
@@ -40,10 +40,14 @@ export class LiveVoice {
   async start() {
     if (['live', 'connecting', 'closing'].includes(this.state.status)) return
     const generation = ++this.generation
-    this.update({ status: 'connecting', error: '', captions: [], startedAt: null })
+    this.update({ status: 'connecting', error: '', needsSetup: false, captions: [], startedAt: null })
     this.inputFragments = []; this.nextInputSequence = 0; this.lastHandledSequence = -1
     this.delegated.clear(); this.lastContext = ''; this.ready = false
     try {
+      const setup = await api<{ configured: boolean }>('/voice/setup')
+      if (generation !== this.generation) return
+      applyVoiceSetup(setup.configured)
+      if (!setup.configured) { this.fail('Voice is not configured. You can keep using text.', true); return }
       const microphone = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } })
       if (generation !== this.generation) { microphone.getTracks().forEach(track => track.stop()); return }
       this.microphone = microphone
@@ -66,7 +70,7 @@ export class LiveVoice {
       this.sessionId = result.session.id
       this.startTimer = window.setTimeout(() => this.fail('OpenAI did not start the voice session. Press the nose to try again.'), 25000)
       await peer.setRemoteDescription({ type: 'answer', sdp: result.transport.sdp })
-    } catch (error) { if (generation === this.generation) this.fail(error instanceof Error ? error.message : String(error)) }
+    } catch (error) { if (generation === this.generation) this.fail(error instanceof Error ? error.message : String(error), /OPENAI_API_KEY|voice API key/i.test(error instanceof Error ? error.message : String(error))) }
   }
   private receive(event: LiveEvent, generation: number) {
     if (event.type === 'session.started') {
@@ -121,7 +125,7 @@ export class LiveVoice {
   }
   async enablePlayback() { try { await this.audio.play(); this.update({ audible: true }) } catch { this.update({ error: 'Select the window and try enabling audio again.' }) } }
   disconnect() { if (['live', 'connecting'].includes(this.state.status)) { this.cleanup(); this.update({ status: 'error', error: 'Local connection lost. Voice has stopped; reconnect before giving another command.', startedAt: null }) } }
-  private fail(message: string) { this.cleanup(); this.update({ status: 'error', error: message, startedAt: null }) }
+  private fail(message: string, needsSetup = false) { this.cleanup(); this.update({ status: 'error', error: message, startedAt: null, needsSetup }) }
   private saveTranscript() {
     if (this.sessionId && this.state.captions.length) api('/live/transcript', { id: this.sessionId, captions: this.state.captions.slice(-50).map(item => ({ ...item, text: item.text.slice(0, 1000) })) }).catch(() => {})
   }

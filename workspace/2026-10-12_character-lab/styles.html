@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="en" data-mak-report="document">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Character Lab - Art styles and projects</title>
+  <link rel="stylesheet" href="../_shared/report.css">
+  <link rel="stylesheet" href="../_shared/examples.css">
+  <script defer src="../_shared/report.js"></script>
+  <style>
+    .lead { max-width: 68ch; }
+    .browser-controls { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; padding: 20px; border: 1px solid var(--mak-border); border-radius: 12px; background: var(--mak-surface); }
+    .search-field { grid-column: 1 / -1; }
+    label { display: block; margin-bottom: 5px; font-size: 13px; }
+    input[type=search], select { width: 100%; min-height: 44px; border: 1px solid var(--mak-border); border-radius: 8px; padding: 10px 12px; background: var(--mak-bg); color: var(--mak-text); font: inherit; }
+    button { min-height: 44px; padding: 9px 14px; border: 1px solid var(--mak-border); border-radius: 8px; background: var(--mak-surface); color: var(--mak-text); font: inherit; cursor: pointer; }
+    button:disabled { cursor: wait; opacity: .65; }
+    .control-footer { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+    .history-option { display: flex; align-items: center; gap: 8px; min-height: 44px; margin: 0; font-size: 14px; }
+    .history-option input { width: 18px; height: 18px; accent-color: var(--mak-accent); }
+    .muted, .section-note, .load-status, .empty, .source-status { color: var(--mak-muted); }
+    .load-status { min-height: 1.8em; }
+    .section-note { margin-top: -10px; font-size: 13px; }
+    .library-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 16px; }
+    .style-card, .future-card, .project-card, .source-card { min-width: 0; padding: 20px; border: 1px solid var(--mak-border); border-radius: 12px; background: var(--mak-surface); }
+    .style-card > h3, .future-card > h3, .project-card > h3, .source-card > h3 { margin: 0 0 6px; }
+    .style-id { display: block; font-size: 12px; margin-bottom: 12px; }
+    .tags { display: flex; flex-wrap: wrap; gap: 7px; margin: 10px 0 14px; }
+    .tag { font-size: 12px; line-height: 1.55; padding: 4px 8px; border: 1px solid var(--mak-border); border-radius: 6px; color: var(--mak-muted); overflow-wrap: anywhere; }
+    .tag.state { border-color: var(--mak-accent); color: var(--mak-accent); }
+    .style-card p, .future-card p, .project-card p, .source-card p { margin: 10px 0; }
+    .style-card details, .project-card details { border-top: 1px solid var(--mak-border); padding-top: 10px; }
+    summary { color: var(--mak-text); font-size: 14px; min-height: 36px; }
+    .aliases { font-size: 13px; }
+    .path { display: block; font-size: 12px; overflow-wrap: anywhere; white-space: normal; }
+    .project-grid { display: grid; gap: 16px; }
+    .subprojects { margin: 12px 0 0; padding-left: 20px; }
+    .subprojects li { margin: 0 0 16px; }
+    .subprojects h4 { margin: 0 0 4px; font-size: 15px; }
+    .subprojects p { font-size: 13px; margin: 4px 0; }
+    .directory-intro { border-left: 2px solid var(--mak-accent); padding-left: 16px; margin: 22px 0; }
+    .source-card { margin: 12px 0; }
+    .source-status { font-size: 13px; }
+    .download-note { font-size: 13px; color: var(--mak-muted); }
+    .empty { padding: 16px 0; }
+    @media (max-width: 600px) { .browser-controls { grid-template-columns: 1fr; padding: 16px; gap: 12px; } .library-grid { grid-template-columns: 1fr; } .style-card, .future-card, .project-card, .source-card { padding: 16px; } .control-footer { align-items: stretch; } .control-footer button { flex: 1; } }
+  </style>
+</head>
+<body><main class="container">
+  <div class="eyebrow">Character Lab / style and project directory</div>
+  <h1>Art styles and projects</h1>
+  <p class="lead">Explore the looks we can refine, then follow a project into its smaller studies. Keep each idea's versions, editable source and delivery destination together.</p>
+  <p>Start with 2D pixel work or explore 3D toon, bright clay, dark clay and plush clay. The library separates current Arty terminology, historical names and future ideas. A style name records a direction; its production result still needs a selected brief and evidence.</p>
+  <p>Reference entries below do not count delivered characters or assets. Follow <a href="characters.html">Character versions</a> for actual lab records.</p>
+  <p><a href="pipeline.md">Idea-to-asset pipeline</a> · <a href="directory.md">Folder and destination guide</a> · <a href="characters.html">Character versions</a></p>
+  <div class="browser-controls" aria-label="Library filters">
+    <div class="search-field"><label for="search">Find a style, alias, project or subproject</label><input id="search" type="search" placeholder="Try bright clay, Night Elf, pixel, CX20 or a source path" autocomplete="off"></div>
+    <div><label for="medium">Medium</label><select id="medium"><option value="">All media</option></select></div>
+    <div><label for="family">Style family</label><select id="family"><option value="">All families</option></select></div>
+    <div><label for="context">Application context</label><select id="context"><option value="">All contexts</option></select></div>
+    <div class="control-footer"><label class="history-option"><input id="history" type="checkbox"> Include historical style names</label><div><button id="reset" type="button">Clear filters</button> <button id="refresh" type="button">Refresh library</button></div></div>
+  </div>
+  <p id="status" class="load-status" role="status" aria-live="polite">Reading library...</p>
+  <section aria-labelledby="styles-heading">
+    <h2 id="styles-heading">Style directions</h2>
+    <p class="section-note">Search includes original IDs and aliases. Medium, family and application context refine this list. These facets guide browsing; they do not assign an engine profile, generation model or animation technique.</p>
+    <div id="styles" class="library-grid"></div>
+  </section>
+  <section aria-labelledby="future-heading">
+    <h2 id="future-heading">Future directions</h2>
+    <p class="section-note">Ideas to define through briefs and reference rounds. Search and medium apply here; family and context stay with the sourced style list.</p>
+    <div id="future" class="library-grid"></div>
+  </section>
+  <section aria-labelledby="projects-heading">
+    <h2 id="projects-heading">Projects and subprojects</h2>
+    <p class="section-note">Search follows project names, scopes and paths. Style filters leave the project directory visible.</p>
+    <p class="directory-intro">One project can contain several style studies, subjects and version rounds. These entries point to the owning roots; external source paths are readable locators. The <a href="directory.md">directory guide</a> explains the proposed depth and where source models and exports go.</p>
+    <div id="projects" class="project-grid"></div>
+  </section>
+  <details id="source-details">
+    <summary>Sources and library data</summary>
+    <p>This view reads <a href="library.json">library.json</a> directly. <a href="library.json" download>Download library index</a>. Character and revision identity remains in the <a href="catalog.json">character catalog</a>.</p>
+    <div id="sources"></div>
+    <p class="muted">Original source paths retain their owners. A supplied source copy preserves its original status and links; this library's navigation does not establish adoption, runtime profile registration or visual approval.</p>
+  </details>
+  <noscript><p>Enable JavaScript to browse filters, or open <a href="library.json">the library index</a> and <a href="directory.md">directory guide</a>.</p></noscript>
+</main>
+<script type="module">
+  const fields = Object.fromEntries(['search', 'medium', 'family', 'context', 'history', 'refresh', 'reset', 'status', 'styles', 'future', 'projects', 'sources'].map(id => [id, document.getElementById(id)]));
+  const SCHEMA = 'mrmak.character-library/v1';
+  let library = null, controller, request = 0, loadedAt = '';
+  const object = value => value !== null && typeof value === 'object' && !Array.isArray(value);
+  const text = value => typeof value === 'string' ? value : '';
+  const asWords = value => /^(?:2d|3d)$/i.test(text(value)) ? text(value).toUpperCase() : text(value).replace(/[_-]/g, ' ');
+  const historical = style => /historical|retired|superseded/i.test(text(style.status));
+  const plain = values => values.flatMap(value => Array.isArray(value) ? value.map(text) : text(value)).join(' ').toLowerCase();
+  const query = () => fields.search.value.trim().toLowerCase();
+  const matches = (entry, extra = []) => !query() || plain([...Object.values(entry).filter(value => typeof value === 'string' || Array.isArray(value) && value.every(item => typeof item === 'string')), ...extra]).includes(query());
+  function add(parent, tag, value = '', className = '') { const node = document.createElement(tag); node.textContent = value; if (className) node.className = className; parent.append(node); return node; }
+  function badge(parent, value, state = false) { if (text(value)) add(parent, 'span', asWords(value), 'tag' + (state ? ' state' : '')); }
+  function empty(parent, message) { add(parent, 'p', message, 'empty'); }
+  function options(field, values, firstLabel) {
+    const selected = field.value;
+    field.replaceChildren();
+    const first = add(field, 'option', firstLabel); first.value = '';
+    for (const value of [...new Set(values.filter(value => text(value)))].sort((a, b) => a.localeCompare(b))) {
+      const option = add(field, 'option', asWords(value)); option.value = value;
+    }
+    field.value = [...field.options].some(option => option.value === selected) ? selected : '';
+  }
+  function validate(data) {
+    if (!object(data) || data.schema !== SCHEMA) throw new Error('Library schema is not recognized.');
+    for (const key of ['sources', 'styles', 'projects', 'future_directions']) if (!Array.isArray(data[key])) throw new Error('Library is missing ' + key + '.');
+    const keys = new Map();
+    for (const key of ['sources', 'styles', 'projects', 'future_directions']) {
+      const seen = new Set();
+      for (const entry of data[key]) {
+        if (!object(entry) || !text(entry.id) || seen.has(entry.id)) throw new Error('Library has an invalid or repeated ' + key + ' ID.');
+        seen.add(entry.id);
+        if (key === 'styles' && (!Array.isArray(entry.aliases) || !entry.aliases.every(alias => typeof alias === 'string'))) throw new Error('Style aliases must be a list of names.');
+        if (key === 'projects' && (!Array.isArray(entry.subprojects) || !entry.subprojects.every(sub => object(sub) && text(sub.id) && text(sub.name)))) throw new Error('Project subprojects must have IDs and names.');
+      }
+      keys.set(key, seen);
+    }
+    for (const style of data.styles) if (!keys.get('sources').has(style.source_id)) throw new Error('A style refers to an unknown source.');
+    return data;
+  }
+  function renderStyles() {
+    fields.styles.replaceChildren();
+    const styles = library.styles.filter(style => (!historical(style) || fields.history.checked) && matches(style)
+      && (!fields.medium.value || style.medium === fields.medium.value)
+      && (!fields.family.value || style.family === fields.family.value)
+      && (!fields.context.value || style.context === fields.context.value));
+    for (const style of styles) {
+      const card = add(fields.styles, 'article', '', 'style-card'); card.dataset.styleId = style.id;
+      add(card, 'h3', text(style.name) || asWords(style.id)); add(card, 'code', style.id, 'style-id');
+      const tags = add(card, 'div', '', 'tags'); badge(tags, style.status, true); badge(tags, style.medium); badge(tags, style.family); badge(tags, style.context);
+      add(card, 'p', text(style.notes));
+      const source = library.sources.find(entry => entry.id === style.source_id);
+      const details = add(card, 'details'); add(details, 'summary', 'Source and scope');
+      if (style.aliases.length) add(details, 'p', 'Search aliases: ' + style.aliases.join(', '), 'aliases');
+      add(details, 'p', source ? text(source.label) : 'Source not recorded', 'source-status');
+      if (source) { add(details, 'code', text(source.path), 'path'); add(details, 'p', text(source.status), 'source-status'); }
+    }
+    if (!styles.length) empty(fields.styles, 'No styles match these filters. Try clearing a filter or including historical names.');
+    return styles.length;
+  }
+  function renderFuture() {
+    fields.future.replaceChildren();
+    const entries = library.future_directions.filter(entry => matches(entry) && (!fields.medium.value || entry.medium === fields.medium.value));
+    for (const entry of entries) {
+      const card = add(fields.future, 'article', '', 'future-card'); add(card, 'h3', text(entry.name) || asWords(entry.id));
+      const tags = add(card, 'div', '', 'tags'); badge(tags, entry.status, true); badge(tags, entry.medium);
+      add(card, 'p', text(entry.notes));
+    }
+    if (!entries.length) empty(fields.future, 'No future directions match this search and medium.');
+    return entries.length;
+  }
+  function renderProjects() {
+    fields.projects.replaceChildren();
+    let count = 0;
+    for (const project of library.projects) {
+      const parentMatch = matches(project), subs = project.subprojects.filter(sub => parentMatch || matches(sub));
+      if (!parentMatch && !subs.length) continue;
+      count++;
+      const card = add(fields.projects, 'article', '', 'project-card'); card.dataset.projectId = project.id;
+      add(card, 'h3', text(project.name)); add(card, 'p', text(project.role)); add(card, 'code', text(project.root), 'path');
+      if (subs.length) {
+        const detail = add(card, 'details'); add(detail, 'summary', subs.length + ' ' + (subs.length === 1 ? 'subproject / study' : 'subprojects / studies'));
+        if (query()) detail.open = true;
+        const list = add(detail, 'ul', '', 'subprojects');
+        for (const sub of subs) {
+          const item = add(list, 'li'); add(item, 'h4', text(sub.name)); add(item, 'p', text(sub.scope));
+          add(item, 'p', text(sub.status), 'source-status'); add(item, 'code', text(sub.path), 'path');
+        }
+      } else add(card, 'p', 'No smaller studies are recorded in this index.', 'muted');
+    }
+    if (!count) empty(fields.projects, 'No projects or subprojects match this search.');
+    return count;
+  }
+  function referenceURL(path) {
+    if (typeof path !== 'string' || !path.startsWith('projects/character-lab/references/') || !/\.md$/i.test(path) || /[\\:%?#\u0000-\u001f\u007f]/.test(path)) return null;
+    const parts = path.split('/');
+    if (parts.some(part => !part || part === '.' || part === '..' || part.startsWith('.'))) return null;
+    const url = new URL('../../' + path, document.baseURI);
+    return url.origin === location.origin ? url : null;
+  }
+  async function downloadReference(path, button, note) {
+    const url = referenceURL(path); if (!url) return;
+    button.disabled = true; note.textContent = 'Reading supplied reference...';
+    try {
+      const response = await fetch(url.href, { cache: 'no-store' });
+      if (!response.ok) throw new Error('Reference is unavailable in this preview.');
+      const blob = await response.blob(), href = URL.createObjectURL(blob);
+      const anchor = document.createElement('a'); anchor.href = href; anchor.download = path.split('/').pop(); anchor.click();
+      setTimeout(() => URL.revokeObjectURL(href), 10000); note.textContent = 'Reference download prepared. Original status and links are preserved.';
+    } catch { note.textContent = 'Reference download is unavailable in this preview. Open the saved path in Workspace Files; restricted mobile previews may only allow this report folder.'; }
+    finally { button.disabled = false; }
+  }
+  function renderSources() {
+    fields.sources.replaceChildren();
+    for (const source of library.sources) {
+      const card = add(fields.sources, 'div', '', 'source-card'); add(card, 'h3', text(source.label));
+      add(card, 'code', text(source.path), 'path'); add(card, 'p', text(source.status), 'source-status');
+      if (referenceURL(source.path)) {
+        const button = add(card, 'button', 'Download supplied reference'); button.type = 'button';
+        const note = add(card, 'p', '', 'download-note'); note.setAttribute('role', 'status');
+        button.addEventListener('click', () => downloadReference(source.path, button, note));
+      }
+    }
+  }
+  function render() {
+    if (!library) return;
+    const styles = renderStyles(), future = renderFuture(), projects = renderProjects();
+    const arty = library.styles.filter(style => style.source_id === 'arty-board' && !historical(style)).length;
+    const references = library.styles.filter(style => style.source_id !== 'arty-board' && !historical(style));
+    const referenceLabel = references.every(style => style.source_id === 'pixel-project') ? 'pixel reference direction' : 'other reference direction';
+    const history = library.styles.filter(historical).length;
+    fields.status.textContent = styles + ' style directions shown. Index: ' + arty + ' current Arty terminology entries + ' + references.length + ' ' + referenceLabel + (references.length === 1 ? '' : 's') + '; ' + history + ' historical ' + (history === 1 ? 'name' : 'names') + '. ' + future + ' future directions and ' + projects + ' projects shown. Read at ' + loadedAt + '.';
+  }
+  async function load() {
+    const turn = ++request; controller?.abort(); controller = new AbortController();
+    library = null;
+    for (const id of ['styles', 'future', 'projects', 'sources']) fields[id].replaceChildren();
+    fields.status.textContent = 'Reading library...'; fields.refresh.disabled = true;
+    try {
+      const response = await fetch('library.json', { cache: 'no-store', signal: controller.signal });
+      if (!response.ok) throw new Error('Library source is unavailable.');
+      const raw = await response.text(); if (raw.length > 524288) throw new Error('Library source is too large for this view.');
+      const data = validate(JSON.parse(raw)); if (turn !== request) return;
+      library = data; loadedAt = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      options(fields.medium, [...data.styles, ...data.future_directions].map(entry => entry.medium), 'All media');
+      options(fields.family, data.styles.map(entry => entry.family), 'All families');
+      options(fields.context, data.styles.map(entry => entry.context), 'All contexts');
+      renderSources(); render();
+    } catch (error) {
+      if (turn !== request || error.name === 'AbortError') return;
+      fields.status.textContent = 'Library unavailable. ' + error.message + ' Open the library index or directory guide, then refresh to retry.';
+    } finally { if (turn === request) fields.refresh.disabled = false; }
+  }
+  fields.search.addEventListener('input', render);
+  for (const id of ['medium', 'family', 'context', 'history']) fields[id].addEventListener('change', render);
+  fields.reset.addEventListener('click', () => { fields.search.value = ''; for (const id of ['medium', 'family', 'context']) fields[id].value = ''; fields.history.checked = false; render(); fields.search.focus(); });
+  fields.refresh.addEventListener('click', load);
+  load();
+</script>
+</body>
+</html>

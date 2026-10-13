@@ -1,6 +1,15 @@
+export interface WorkspaceTabGroup {
+  id: string
+  name: string
+  /** Global step index to open before this group's first document is visited. */
+  defaultStep?: number
+}
+
 export interface WorkspaceStep {
   name: string
   path: string
+  /** Section ID from the card's tabGroups; omitted steps remain accessible. */
+  groupId?: string
   /**
    * Omitted = HTML in an iframe, formatted Markdown, or an image preview,
    * selected by file extension. `compare3d` = a Compare3DManifest JSON and
@@ -22,6 +31,8 @@ export interface WorkspaceEntity {
   updated?: string
   folder: string
   steps: WorkspaceStep[]
+  /** Optional sections; cards without these keep one flat document tab row. */
+  tabGroups?: WorkspaceTabGroup[]
   /** Tab to open for a card link without an explicit step; otherwise use latest. */
   defaultStep?: number
   status: 'active' | 'done' | 'archived'

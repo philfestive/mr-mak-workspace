@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="en" data-mak-report="document">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Character Lab - Characters</title>
+  <link rel="stylesheet" href="../_shared/report.css">
+  <link rel="stylesheet" href="../_shared/examples.css">
+  <script defer src="../_shared/report.js"></script>
+  <style>
+    input { width: 100%; min-height: 44px; box-sizing: border-box; padding: .7rem; background: var(--mak-surface); color: inherit; border: 1px solid var(--mak-border); border-radius: .5rem; }
+    button { margin-top: .6rem; min-height: 44px; padding: .6rem 1rem; border: 1px solid var(--mak-border); border-radius: .5rem; background: var(--mak-surface); color: inherit; cursor: pointer; }
+    .catalog-status, .availability, .version-meta { color: var(--mak-muted); }
+    .catalog-status { margin: 1rem 0; }
+    .versions { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 18px; }
+    .version { min-width: 0; padding: 18px; border: 1px solid var(--mak-border); border-radius: 12px; background: var(--mak-surface); }
+    .version > h4 { margin-top: 0; font-size: 18px; }
+    .version-meta { margin-top: -.5rem; font-size: 13px; }
+    .version h5 { font-size: 15px; margin: 1.2rem 0 .6rem; }
+    .version figure { margin: 0; }
+    .version figcaption { margin-top: .5rem; font-size: 13px; }
+    .version .variants { grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); }
+    .version .variant img, .version .variant video { max-height: 380px; object-fit: contain; }
+    .source-path, dd { overflow-wrap: anywhere; }
+    .source-path { display: block; font-size: 12px; }
+    .availability { font-size: 13px; }
+    .sources { border-top: 1px solid var(--mak-border); padding-top: 12px; }
+    .sources dl, .handoff dl { margin: 1rem 0; }
+    .sources dt, .handoff dt { font-weight: 600; margin-top: .6rem; }
+    .sources dd, .handoff dd { margin-left: 0; }
+    .handoff { border-top: 1px solid var(--mak-border); margin-top: 18px; padding-top: 12px; }
+    .prompt-disclosure pre { max-height: 360px; white-space: pre-wrap; overflow-wrap: anywhere; }
+    @media (max-width: 600px) { .version { padding: 14px; } .versions { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body><main class="container">
+  <h1>Characters</h1>
+  <p>Find an idea, compare its versions, see the recorded choice, and follow the next output in <a href="../2026-10-12_workspace-home/tasks.md">Tasks</a>.</p>
+  <label for="search">Find a character or version</label>
+  <input id="search" type="search" placeholder="Character name, version, or source path">
+  <button id="refresh" type="button">Refresh characters</button>
+  <p id="status" class="catalog-status" role="status">Reading characters...</p>
+  <div id="characters"></div>
+  <p><a href="overview.md">Lab overview</a> · <a href="lessons.md">Lessons from earlier work</a></p>
+  <details class="sources">
+    <summary>Sources and evidence</summary>
+    <p>This view reads the <a href="catalog.json">canonical catalog</a> directly. <a href="catalog.json" download>Download catalog</a>.</p>
+    <p>Source paths stay readable when a preview cannot open project files, including restricted mobile previews. Open those paths in Workspace Files. No second catalog is saved here.</p>
+    <p>A choice applies to its named stage. Saved review and delivery records describe their own scope; visual quality and engine behavior need their actual evidence.</p>
+  </details>
+</main>
+<script type="module">
+  const host = document.getElementById('characters'), status = document.getElementById('status'), search = document.getElementById('search');
+  const refreshButton = document.getElementById('refresh');
+  const TREE = 'projects/character-lab/characters/';
+  const PRIVATE = /^(?:\.|node_modules$|(?:job|result|upload|auth|credentials?|tokens?|secrets?)\.json$|.*(?:receipt|raw-response|raw_response|api-key|api_key|access-token|access_token).*\.(?:json|log|txt)$)/i;
+  const IMAGE = /\.(?:png|jpe?g|webp|gif|avif|bmp)$/i, VIDEO = /\.(?:mp4|webm|ogv|mov|m4v)$/i;
+  const STAGES = { concept: 'Concept', sheet: 'Reference sheet', mesh: 'Model', materials: 'Materials', rig: 'Rig', animation: 'Animation', engine: 'Engine verification' };
+  const STATES = { candidate: 'Candidate', reviewed: 'Reviewed', accepted: 'Recorded as accepted', rejected: 'Set aside', superseded: 'Earlier choice' };
+  let catalog, loadedAt, controller, request = 0;
+  let files = new Map();
+  const object = value => value !== null && typeof value === 'object' && !Array.isArray(value);
+  const text = value => typeof value === 'string' ? value : '';
+  const validCharacter = id => typeof id === 'string' && /^[a-z0-9][a-z0-9-]{0,30}$/.test(id);
+  const validRevision = id => typeof id === 'string' && /^r[0-9]{3,}$/.test(id) && !/^r0+$/.test(id);
+  const stageName = stage => Object.hasOwn(STAGES, stage) ? STAGES[stage] : text(stage) || 'Stage not recorded';
+  const versionName = revision => text(revision.label).trim() || 'Version ' + text(revision.id).replace(/^r0*/, '');
+  const revisionAnchor = (character, revision) => 'version-' + character.id + '-' + revision.id;
+  const add = (parent, tag, value) => { const node = document.createElement(tag); node.textContent = value; parent.append(node); return node; };
+  const link = (parent, label, url) => { const node = add(parent, 'a', label); node.href = url; return node; };
+  function disclosure(parent, label, className = 'sources') {
+    const node = add(parent, 'details', ''); node.className = className; add(node, 'summary', label); return node;
+  }
+  function term(parent, label, value) { add(parent, 'dt', label); return add(parent, 'dd', value || 'Not recorded'); }
+  function sourceTerm(parent, label, path, character, revision) {
+    const holder = term(parent, label, ''); holder.replaceChildren(); sourcePath(holder, path, character, revision);
+  }
+  function sourceURL(path, character, revision = null) {
+    if (!validCharacter(character.id) || typeof path !== 'string' || /[\\:%?#\u0000-\u001f\u007f]/.test(path)) return null;
+    const parts = path.split('/');
+    if (parts.some(part => !part || part === '.' || part === '..' || PRIVATE.test(part))) return null;
+    const prefix = TREE + character.id + '/' + (revision ? 'revisions/' + revision.id + '/' : '');
+    if (revision && !validRevision(revision.id)) return null;
+    if (!path.startsWith(prefix)) return null;
+    return new URL('../../' + path, document.baseURI);
+  }
+  function sourcePath(parent, path, character, revision = null) {
+    const url = sourceURL(path, character, revision);
+    const node = url ? link(parent, path, url.href) : add(parent, 'span', text(path) || 'Path not recorded');
+    node.className = 'source-path';
+    if (url) { node.target = '_blank'; node.rel = 'noopener noreferrer'; }
+    else add(parent, 'p', 'This path is outside the allowed character files and will not be opened.').className = 'availability';
+    return node;
+  }
+  function readFile(path, character, revision, format, context) {
+    const url = sourceURL(path, character, revision);
+    if (!url) return Promise.reject(new Error('Source path is not allowed.'));
+    const key = format + ':' + path;
+    if (!context.files.has(key)) context.files.set(key, (async () => {
+      const response = await fetch(url.href, { cache: 'no-store', signal: context.signal });
+      if (!response.ok) throw new Error('Source unavailable in this preview.');
+      const content = await response.text();
+      if (content.length > 262144) throw new Error('Source is too large for this preview.');
+      return format === 'json' ? JSON.parse(content) : content;
+    })());
+    return context.files.get(key);
+  }
+  function unavailable(parent, label, path, character, revision = null) {
+    add(parent, 'p', label + ' is unavailable in this preview. Open its saved source in Workspace Files.').className = 'availability';
+    sourcePath(parent, path, character, revision);
+  }
+  function boundRecord(record, kind, character, revision) {
+    return object(record) && record.schema === 'mrmak.character-' + kind + '/v1'
+      && record.character_id === character.id && record.revision_id === revision.id
+      && record.manifest_sha256 === revision.manifest?.sha256
+      && (kind !== 'selection' || record.scope === revision.stage);
+  }
+  function preview(parent, asset, character, revision) {
+    const url = sourceURL(asset.path, character, asset.kind === 'output' ? revision : null);
+    if (!url) return;
+    const figure = add(parent, 'figure', ''); figure.className = 'variant';
+    const role = text(asset.role).replace(/[-_]/g, ' ') || (asset.kind === 'input' ? 'Reference' : 'Output');
+    const label = character.name + ' - ' + versionName(revision) + ' - ' + role;
+    const availability = add(figure, 'p', 'Loading preview...'); availability.className = 'availability';
+    const missing = label => {
+      availability.textContent = label + ' unavailable in this preview. Open its source in Workspace Files.';
+      if (!availability.isConnected) figure.append(availability);
+      sourcePath(figure, asset.path, character, asset.kind === 'output' ? revision : null);
+    };
+    if (IMAGE.test(asset.path)) {
+      const original = link(figure, '', url.href), image = add(original, 'img', '');
+      original.target = '_blank'; original.rel = 'noopener noreferrer';
+      image.alt = label; image.loading = 'lazy';
+      image.addEventListener('load', () => availability.remove());
+      image.addEventListener('error', () => { original.remove(); missing('Image'); }, { once: true });
+      image.src = url.href;
+    } else {
+      const video = add(figure, 'video', ''); video.controls = true; video.preload = 'metadata'; video.playsInline = true;
+      video.setAttribute('aria-label', label);
+      video.addEventListener('loadedmetadata', () => availability.remove(), { once: true });
+      video.addEventListener('error', () => { video.remove(); missing('Video'); }, { once: true });
+      video.src = url.href;
+      const download = link(figure, 'Download video', url.href); download.download = asset.path.split('/').pop(); download.className = 'media-download';
+    }
+    add(figure, 'figcaption', role);
+  }
+  function showHandoff(parent, handoff, character, revision) {
+    if (!object(handoff) || handoff.schema !== 'mrmak.character-handoff/v1'
+      || handoff.character_id !== character.id || handoff.revision_id !== revision.id
+      || !Array.isArray(handoff.editable_sources) || !Array.isArray(handoff.exports)
+      || !Array.isArray(handoff.evidence) || !object(handoff.receiver)
+      || !['planned', 'delivered', 'verified'].includes(handoff.state)) throw new Error('Model destination record needs attention.');
+    if (handoff.editable_sources.some(path => !sourceURL(path, character))
+      || handoff.evidence.some(path => !sourceURL(path, character))
+      || handoff.exports.some(item => !object(item) || !sourceURL(item.path, character) || typeof item.destination_path !== 'string')) throw new Error('Model destination sources are not allowed.');
+    const section = add(parent, 'section', ''); section.className = 'handoff';
+    add(section, 'h5', 'Where this asset goes');
+    const details = add(section, 'dl', '');
+    for (const [key, label] of [['project', 'Receiving project'], ['root', 'Receiving folder'], ['consumer', 'Receiving scene or system'], ['owner', 'Receiving owner'], ['task', 'Receiving task']]) term(details, label, text(handoff.receiver[key]));
+    term(details, 'Recorded delivery state', handoff.state);
+    add(section, 'h5', 'Editable sources');
+    if (!handoff.editable_sources.length) add(section, 'p', 'No editable source recorded.');
+    for (const path of handoff.editable_sources) sourcePath(section, path, character);
+    add(section, 'h5', 'Exports');
+    if (!handoff.exports.length) add(section, 'p', 'No export recorded.');
+    for (const item of handoff.exports) {
+      const entry = add(section, 'div', '');
+      sourcePath(entry, item.path, character);
+      add(entry, 'p', 'Destination: ' + (item.destination_path || 'Not recorded'));
+    }
+    if (text(handoff.notes)) add(section, 'p', handoff.notes);
+    const evidence = disclosure(section, 'Delivery evidence');
+    if (!handoff.evidence.length) add(evidence, 'p', 'No delivery evidence recorded.');
+    for (const path of handoff.evidence) sourcePath(evidence, path, character);
+  }
+  async function hydrateRevision(card, media, choice, sources, character, revision, context) {
+    const selection = (async () => {
+      if (!revision.selection) { choice.textContent = 'No choice reason recorded for this version.'; return; }
+      try {
+        const record = await readFile(revision.selection.path, character, revision, 'json', context);
+        if (!boundRecord(record, 'selection', character, revision) || !text(record.decision).trim()) throw new Error('Choice record does not match this version.');
+        if (!card.isConnected) return;
+        choice.replaceChildren(); add(choice, 'h5', 'Recorded choice'); add(choice, 'p', record.decision);
+        add(choice, 'p', 'Saved by ' + (text(record.by) || 'an unspecified owner') + (text(record.date) ? ' on ' + record.date : '') + ' for ' + stageName(record.scope) + '.').className = 'version-meta';
+      } catch { if (card.isConnected) { choice.replaceChildren(); unavailable(choice, 'Choice reason', revision.selection?.path, character, revision); } }
+    })();
+    const review = (async () => {
+      if (!revision.review) return;
+      const holder = disclosure(sources, 'Saved review');
+      try {
+        const record = await readFile(revision.review.path, character, revision, 'json', context);
+        if (!boundRecord(record, 'review', character, revision) || !['pass', 'fail'].includes(record.verdict) || typeof record.notes !== 'string') throw new Error('Review record does not match this version.');
+        if (card.isConnected) { add(holder, 'p', 'Recorded verdict: ' + record.verdict); add(holder, 'p', record.notes); }
+      } catch { if (card.isConnected) unavailable(holder, 'Review', revision.review?.path, character, revision); }
+    })();
+    try {
+      const manifest = await readFile(revision.manifest?.path, character, revision, 'json', context);
+      if (!object(manifest) || manifest.schema !== 'mrmak.asset-delivery/v1' || manifest.card_id !== 'character-lab'
+        || manifest.step !== character.id + '-' + revision.id + '-' + revision.stage || !Array.isArray(manifest.files)) throw new Error('Saved outputs do not match this version.');
+      if (!card.isConnected) return;
+      media.replaceChildren();
+      if (text(manifest.provider)) add(sources, 'p', 'Provider: ' + manifest.provider);
+      if (text(manifest.model)) add(sources, 'p', 'Model: ' + manifest.model);
+      const allowed = manifest.files.filter(asset => object(asset) && ['input', 'output'].includes(asset.kind)
+        && sourceURL(asset.path, character, asset.kind === 'output' ? revision : null));
+      if (allowed.length !== manifest.files.length) add(sources, 'p', 'Some file entries are outside the allowed character files and were not opened.').className = 'availability';
+      for (const kind of ['output', 'input']) {
+        const assets = allowed.filter(asset => asset.kind === kind && (IMAGE.test(asset.path) || VIDEO.test(asset.path)));
+        if (!assets.length) continue;
+        add(media, 'h5', kind === 'output' ? 'This version' : 'Reference and inputs');
+        const grid = add(media, 'div', ''); grid.className = 'variants';
+        for (const asset of assets) preview(grid, asset, character, revision);
+      }
+      if (!media.children.length) add(media, 'p', 'No image or video preview is registered for this version. Its files are listed in Sources and evidence.').className = 'availability';
+      const fileList = add(sources, 'ul', '');
+      for (const asset of allowed) {
+        const item = add(fileList, 'li', (asset.kind === 'input' ? 'Input' : 'Output') + ' - ' + (text(asset.role).replace(/[-_]/g, ' ') || 'file'));
+        sourcePath(item, asset.path, character, asset.kind === 'output' ? revision : null);
+      }
+      const extra = allowed.map(async asset => {
+        const isPrompt = /\.(?:md|txt)$/i.test(asset.path)
+          && (/(?:^|[-_])prompt(?:[-_]|$)/i.test(text(asset.role)) || /^prompt(?:[-_.]|$)/i.test(asset.path.split('/').pop()));
+        if (isPrompt) {
+          const prompt = disclosure(media, 'Saved prompt', 'prompt-disclosure');
+          try {
+            const content = await readFile(asset.path, character, asset.kind === 'output' ? revision : null, 'text', context);
+            if (card.isConnected) { add(prompt, 'pre', content); sourcePath(prompt, asset.path, character); }
+          } catch { if (card.isConnected) unavailable(prompt, 'Saved prompt', asset.path, character); }
+        }
+        if (asset.role === 'model-handoff' && /\.json$/i.test(asset.path)) {
+          const destination = add(media, 'div', '');
+          try {
+            const record = await readFile(asset.path, character, revision, 'json', context);
+            if (card.isConnected) showHandoff(destination, record, character, revision);
+          } catch { if (card.isConnected) { add(destination, 'h5', 'Where this asset goes'); unavailable(destination, 'Asset destination record', asset.path, character, revision); } }
+        }
+      });
+      if (revision.stage === 'mesh' && !allowed.some(asset => asset.role === 'model-handoff')) {
+        add(media, 'h5', 'Where this asset goes');
+        add(media, 'p', 'No asset destination recorded for this version.');
+      }
+      await Promise.all(extra);
+    } catch { if (card.isConnected) { media.replaceChildren(); unavailable(media, 'Saved input and output previews', revision.manifest?.path, character, revision); } }
+    await Promise.all([selection, review]);
+  }
+  function renderRevision(parent, character, revision, context) {
+    const card = add(parent, 'article', ''); card.className = 'version'; card.id = revisionAnchor(character, revision);
+    add(card, 'h4', versionName(revision));
+    const state = Object.hasOwn(STATES, revision.state) ? STATES[revision.state] : text(revision.state) || 'State not recorded';
+    add(card, 'p', stageName(revision.stage) + ' - ' + state).className = 'version-meta';
+    if (text(revision.goal).trim()) add(card, 'p', revision.goal);
+    const media = add(card, 'div', ''); add(media, 'p', 'Reading saved inputs and outputs...').className = 'availability';
+    const choice = add(card, 'div', '');
+    const sources = disclosure(card, 'Sources and evidence');
+    const details = add(sources, 'dl', '');
+    term(details, 'Character ID', character.id); term(details, 'Revision ID', revision.id); term(details, 'Task', text(revision.task_id));
+    term(details, 'Parent version', text(revision.parent) || 'Independent starting version');
+    sourceTerm(details, 'Delivery manifest', revision.manifest?.path, character, revision);
+    if (text(revision.manifest?.sha256)) term(details, 'Pinned manifest SHA-256', revision.manifest.sha256);
+    for (const key of ['selection', 'review']) if (revision[key]) sourceTerm(details, key === 'selection' ? 'Choice record' : 'Review record', revision[key].path, character, revision);
+    void hydrateRevision(card, media, choice, sources, character, revision, context);
+  }
+  function render() {
+    host.replaceChildren();
+    const query = search.value.trim().toLowerCase();
+    const matches = catalog.characters.filter(character => JSON.stringify(character).toLowerCase().includes(query));
+    status.textContent = (catalog.characters.length ? matches.length + ' of ' + catalog.characters.length + ' characters shown.' : 'No characters registered yet.') + ' Read at ' + loadedAt + '.';
+    if (!catalog.characters.length) {
+      const empty = add(host, 'section', ''); empty.className = 'mak-card';
+      add(empty, 'h2', 'Choose the first idea');
+      add(empty, 'p', 'No character, version, or choice has been recorded. Start with a brief, a reference to keep, and one next output: a concept, a sprite sheet, or a model.');
+      link(empty, 'Character brief template', '../../projects/character-lab/templates/character-brief.md');
+      empty.append(' · '); link(empty, 'Version round template', '../../projects/character-lab/templates/round.md');
+      empty.append(' · '); link(empty, 'Pipeline source', 'pipeline.md');
+      empty.append(' · '); link(empty, 'Current assignment in Tasks', '../2026-10-12_workspace-home/tasks.md'); return;
+    }
+    if (!matches.length) { add(host, 'p', 'No characters match this search. Try a name, version, or source path.'); return; }
+    const context = { files, signal: controller.signal };
+    for (const character of matches) {
+      if (!object(character) || !validCharacter(character.id) || !Array.isArray(character.revisions) || !object(character.selected)) {
+        add(host, 'p', 'A character record could not be shown. Its catalog entry needs attention.').className = 'availability'; continue;
+      }
+      const section = add(host, 'section', ''); section.className = 'mak-card';
+      add(section, 'h2', text(character.name) || character.id);
+      const briefURL = sourceURL(character.brief, character);
+      if (briefURL) { const brief = link(section, 'Read the character brief', briefURL.href); brief.target = '_blank'; brief.rel = 'noopener noreferrer'; }
+      const choices = add(section, 'p', 'Recorded choices: ');
+      const selected = Object.entries(character.selected);
+      if (!selected.length) choices.append('None yet.');
+      selected.forEach(([stage, id], index) => {
+        const revision = character.revisions.find(item => object(item) && item.id === id);
+        if (index) choices.append(' · ');
+        if (revision && validRevision(revision.id)) link(choices, stageName(stage) + ': ' + versionName(revision), '#' + revisionAnchor(character, revision));
+        else choices.append(stageName(stage) + ': choice record needs attention');
+      });
+      const next = add(section, 'p', 'Next output: ');
+      if (briefURL) link(next, 'consult this character brief', briefURL.href);
+      next.append(' and '); link(next, 'the current assignment', '../2026-10-12_workspace-home/tasks.md');
+      const taskIDs = [...new Set(character.revisions.filter(object).map(item => text(item.task_id)).filter(Boolean))];
+      if (taskIDs.length) add(section, 'p', 'Recorded task references: ' + taskIDs.join(', ')).className = 'version-meta';
+      const groups = new Map();
+      for (const revision of character.revisions) {
+        if (!object(revision) || !validRevision(revision.id)) { add(section, 'p', 'A version entry needs attention and was not opened.').className = 'availability'; continue; }
+        const round = text(revision.round).trim(), key = round ? 'round:' + round : 'stage:' + revision.stage;
+        if (!groups.has(key)) {
+          const group = add(section, 'section', ''); add(group, 'h3', round || stageName(revision.stage) + ' versions');
+          const grid = add(group, 'div', ''); grid.className = 'versions'; groups.set(key, grid);
+        }
+        renderRevision(groups.get(key), character, revision, context);
+      }
+      if (!character.revisions.length) add(section, 'p', 'No versions yet. Choose a reference and the first output in the brief.');
+      const sources = disclosure(section, 'Character sources'); add(sources, 'p', 'Character ID: ' + character.id); sourcePath(sources, character.brief, character);
+    }
+  }
+  async function refresh() {
+    const run = ++request;
+    controller?.abort(); controller = new AbortController(); files = new Map();
+    refreshButton.disabled = true; status.textContent = 'Reading characters...';
+    try {
+      const response = await fetch('catalog.json', { cache: 'no-store', signal: controller.signal });
+      if (!response.ok) throw new Error('The character list is unavailable in this preview.');
+      const next = await response.json();
+      if (!object(next) || next.schema !== 'mrmak.character-lab/v1' || next.card_id !== 'character-lab' || !Array.isArray(next.characters)) throw new Error('The character list format needs attention.');
+      if (run !== request) return;
+      catalog = next; loadedAt = new Date().toLocaleTimeString(); render();
+    } catch (error) {
+      if (run !== request) return;
+      catalog = null; host.replaceChildren();
+      status.textContent = (error.name === 'SyntaxError' ? 'The character list could not be read.' : error.message) + ' Try Refresh characters. The source remains catalog.json.';
+    } finally { if (run === request) refreshButton.disabled = false; }
+  }
+  search.addEventListener('input', () => { if (catalog) render(); });
+  refreshButton.addEventListener('click', refresh);
+  await refresh();
+</script>
+</body></html>

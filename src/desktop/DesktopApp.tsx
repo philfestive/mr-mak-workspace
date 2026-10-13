@@ -1,8 +1,9 @@
-import { lazy, Suspense, useEffect } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import App from '../App'
 import { dismissError, sendEvent, startDesktop, surface, useDesktop } from './client'
 import FilesRail, { FilePreview } from './FilesRail'
 import VoiceDock from './VoiceDock'
+import WorkspaceSettings from './WorkspaceSettings'
 import { Icon, Nose } from './Icons'
 import './desktop.css'
 
@@ -10,6 +11,8 @@ const Chats = lazy(() => import('./Chats'))
 
 export default function DesktopApp() {
   const state = useDesktop()
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  useEffect(() => { const open = () => setSettingsOpen(true); window.addEventListener('mrmak-open-settings', open); return () => window.removeEventListener('mrmak-open-settings', open) }, [])
   useEffect(() => { startDesktop() }, [])
   useEffect(() => {
     if (surface !== 'workspace') return
@@ -23,5 +26,6 @@ export default function DesktopApp() {
     {state.error && <div className="desktop-error" role="alert"><span>{state.error}</span><button onClick={dismissError} aria-label="Dismiss error"><Icon name="close" size={16} /></button></div>}
     {!state.connected && <div className="desktop-offline">Reconnecting to the local service…</div>}
     <VoiceDock />
+    {settingsOpen && <div className="desk-scrim voice-settings-overlay" onClick={() => setSettingsOpen(false)}><div className="voice-settings-dialog" onClick={event => event.stopPropagation()}><WorkspaceSettings focusVoice onClose={() => setSettingsOpen(false)} /></div></div>}
   </div>
 }

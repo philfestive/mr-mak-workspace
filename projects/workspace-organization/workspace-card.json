@@ -1,0 +1,21 @@
+{
+  "id": "workspace-organization",
+  "title": "Sources & Output",
+  "description": "Clear macro goals, mobile 3D design questions, retained examples, source routes and drift prevention.",
+  "type": "group",
+  "category": "dev",
+  "created": "2026-10-12",
+  "updated": "2026-10-12",
+  "folder": "2026-10-12_workspace-organization",
+  "steps": [
+    { "name": "Macro goals", "path": "macro-goals.md" },
+    { "name": "Examples", "path": "examples.md" },
+    { "name": "Performance", "path": "performance.md" },
+    { "name": "Drift plan", "path": "drift-plan.md" },
+    { "name": "Setup review", "path": "review.md" },
+    { "name": "Output standard", "path": "standard.md" }
+  ],
+  "status": "active",
+  "pinned": false,
+  "defaultStep": 0
+}

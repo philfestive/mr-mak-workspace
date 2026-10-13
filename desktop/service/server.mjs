@@ -6,6 +6,8 @@ import { WebSocketServer, WebSocket } from 'ws';
 import { parse as parseEnv } from 'dotenv';
 import { Sessions } from './sessions.mjs';
 import { Coordinator } from './coordinator.mjs';
+import { CodexLogin } from './codex-login.mjs';
+import { VoiceSettings } from './voice-settings.mjs';
 import { Files, serveFile } from './files.mjs';
 import { importFile, dragFiles, moveFile, recyclePath, MAX_FILE_BYTES } from './file-transfers.mjs';
 import { inventory } from './agents.mjs';
@@ -26,7 +28,7 @@ import { MobileGateway } from './mobile.mjs';
 
 const listen = server => new Promise((resolve, reject) => { server.once('error', reject); server.listen(0, '127.0.0.1', () => resolve(`http://127.0.0.1:${server.address().port}`)); });
 
-export async function createService({ repo, uiDir, stateDir, token = secret(), native = () => {}, restoreSessions = false, mcpOptions, mobileOptions }) {
+export async function createService({ repo, uiDir, stateDir, token = secret(), native = () => {}, restoreSessions = false, mcpOptions, mobileOptions, loginOptions, voiceSetupOptions }) {
   repo = await realpath(repo);
   stateDir ||= path.join(repo, '.mrmak');
   const files = new Files(repo);
@@ -39,6 +41,7 @@ export async function createService({ repo, uiDir, stateDir, token = secret(), n
   const integrations = await new IntegrationManager(stateDir).init();
   const mcp = new McpInventory(repo, mcpOptions);
   const sessions = await new Sessions(repo, stateDir).init();
+  const voiceSetup = new VoiceSettings(repo, voiceSetupOptions);
   const environment = parseEnv(await readFile(path.join(repo, '.env'), 'utf8').catch(() => ''));
   const settingsPath = path.join(stateDir, 'settings.json');
   let settings = { defaultAgent: 'codex', defaultBypass: false, coordinatorModel: environment.MRMAK_COORDINATOR_MODEL?.trim() || null, terminalFontSize: 13, terminalAppearance: 'focus', workspaceTheme: 'dark', coordinatorEffort: 'medium', voiceName: 'cedar', voiceStyle: defaultVoiceStyle, ...await readJson(settingsPath, {}) };
@@ -76,7 +79,7 @@ export async function createService({ repo, uiDir, stateDir, token = secret(), n
     return { attached: verified, submitted: false };
   };
   const coordinator = await new Coordinator({
-    repo, stateDir, orientation: () => library.orientation(), settings: () => settings,
+    repo, stateDir, orientation: () => library.orientation(), settings: () => settings, authBusy: () => codexLogin.busy,
     context: () => ({ repo, localDate: localDay(), selectedId, workspaceRoute, chats: sessions.active(), recentNotices: notices.slice(-5), recentRequests: [...coordinator.operations.values(), ...quick.operations.values()].sort((a, b) => a.at.localeCompare(b.at)).slice(-6).map(({ text, result, status }) => ({ text, result, status })) }),
     execute: async (name, args, operationId, requestText) => {
       const latestRequest = requestText || coordinator.operations.get(operationId)?.text || '';
@@ -125,16 +128,25 @@ export async function createService({ repo, uiDir, stateDir, token = secret(), n
       }
     },
   }).init();
+  const codexLogin = new CodexLogin({ repo, ...loginOptions, completed: () => coordinator.refreshConnection(true) });
+  codexLogin.on('state', login => broadcast('coordinator-login', { login: { ...login, account: coordinator.account } }));
+  const loginBlocked = () => { if (codexLogin.busy) throw Object.assign(new Error('Finish or cancel browser sign-in before reconnecting or asking Mr. Mak.'), { status: 409 }); };
+  const voiceAvailable = () => { if (voiceOwner) throw Object.assign(new Error(`Voice is already starting or active in the ${voiceOwner.surface} window.`), { status: 409 }); };
+  const voiceSaveBlocked = () => { if (voiceSetup.saving) throw Object.assign(new Error('Wait for voice setup to finish saving, then try again.'), { status: 409 }); };
   const quick = await new QuickActions({ stateDir, workspace, context: () => ({ chats: sessions.active(), route: workspaceRoute }), execute: (...args) => coordinator.execute(...args), completed: operation => broadcast('coordinator-result', { operation }) }).init();
   const askMak = async data => {
+    loginBlocked();
+    if (coordinator.refreshPromise) throw Object.assign(new Error('Codex is reconnecting. Wait for the connection refresh to finish.'), { status: 409 });
     if (coordinator.operationPromises.has(data.id) || coordinator.operations.has(data.id)) return coordinator.ask(data);
     const images = await attachments.coordinatorImages(data.images);
+    loginBlocked();
     if (images.length) return coordinator.ask({ ...data, images });
     return await quick.ask(data) || coordinator.ask({ ...data, images });
   };
   coordinator.on('state', state => broadcast('coordinator-state', { state }));
   coordinator.on('result', operation => broadcast('coordinator-result', { operation }));
   coordinator.on('error-detail', error => broadcast('service-error', { error }));
+  coordinator.on('account', account => broadcast('coordinator-account', { account }));
   sessions.on('session', session => { broadcast('session', { session }); integrations.publish('session', { event: session.status, session }).catch(() => {}); });
   sessions.on('screen-cleared', ({ id }) => broadcast('screen-cleared', { id }));
   sessions.on('service-error', error => broadcast('service-error', { error: publicError(error) }));
@@ -189,8 +201,17 @@ export async function createService({ repo, uiDir, stateDir, token = secret(), n
         if (method === 'POST' && url.pathname === '/api/mobile/approve') return json(response, 200, await mobile.approve(data.id));
         if (method === 'POST' && url.pathname === '/api/mobile/revoke') return json(response, 200, await mobile.revoke(data.id));
         if (method === 'GET' && url.pathname === '/api/bootstrap') {
-          const keys = parseEnv(await readFile(path.join(repo, '.env'), 'utf8').catch(() => ''));
-          return json(response, 200, { repo, contentBase: `${files.origin}/view/${files.repoGrant}`, agents: inventory(), sessions: sessions.list(), settings, selectedId, notices, coordinator: coordinator.state, voice: { configured: !!(keys.OPENAI_API_KEY || keys.OPENAI_KEY || process.env.OPENAI_API_KEY), owner: voiceOwner }, voiceHistory, operations: [...coordinator.operations.values(), ...quick.operations.values()].sort((a, b) => a.at.localeCompare(b.at)).slice(-30) });
+          const setup = await voiceSetup.check().catch(() => ({ configured: false }));
+          return json(response, 200, { repo, contentBase: `${files.origin}/view/${files.repoGrant}`, agents: inventory(), sessions: sessions.list(), settings, selectedId, notices, coordinator: coordinator.state, codexAccount: coordinator.account, codexLogin: codexLogin.snapshot(), voice: { configured: setup.configured, owner: voiceOwner }, voiceHistory, operations: [...coordinator.operations.values(), ...quick.operations.values()].sort((a, b) => a.at.localeCompare(b.at)).slice(-30) });
+        }
+        if (url.pathname === '/api/voice/setup' && ['GET', 'POST'].includes(method)) {
+          if (method === 'POST') {
+            voiceAvailable(); loginBlocked();
+            if (coordinator.refreshPromise) throw Object.assign(new Error('Wait for the Codex connection refresh before saving voice setup.'), { status: 409 });
+          }
+          const setup = method === 'POST' ? await voiceSetup.save(data?.apiKey) : await voiceSetup.check();
+          broadcast('voice-status', { configured: setup.configured });
+          return json(response, 200, setup);
         }
         if (method === 'GET' && url.pathname === '/api/workspace') return json(response, 200, await registry());
         const cardMetadata = url.pathname.match(/^\/api\/workspace\/entities\/([^/]+)$/);
@@ -275,7 +296,25 @@ export async function createService({ repo, uiDir, stateDir, token = secret(), n
           native({ type: 'reveal', path: file }); return json(response, 200, { requested: true });
         }
         if (method === 'POST' && url.pathname === '/api/coordinator') return json(response, 200, await askMak(data));
-        if (method === 'POST' && url.pathname === '/api/coordinator/prepare') { await coordinator.start(); return json(response, 200, { ready: true, model: coordinator.model }); }
+        if (method === 'GET' && url.pathname === '/api/coordinator/login') return json(response, 200, { ...codexLogin.snapshot(), account: coordinator.account });
+        if (method === 'POST' && url.pathname === '/api/coordinator/login/cancel') return json(response, 200, await codexLogin.cancel());
+        if (method === 'POST' && url.pathname === '/api/coordinator/login') {
+          voiceSaveBlocked();
+          if (voiceOwner) throw Object.assign(new Error('Stop voice before switching the Codex account.'), { status: 409 });
+          if (coordinator.refreshPromise || coordinator.active || coordinator.operationPromises.size || coordinator.startPromise || coordinator.pending.size) throw Object.assign(new Error('Wait for Mr. Mak to finish the current request before signing in.'), { status: 409 });
+          return json(response, 200, await codexLogin.start());
+        }
+        if (method === 'POST' && url.pathname === '/api/coordinator/prepare') { loginBlocked(); await coordinator.start(); return json(response, 200, { ready: true, model: coordinator.model }); }
+        if (method === 'POST' && url.pathname === '/api/coordinator/refresh') {
+          loginBlocked(); voiceSaveBlocked();
+          if (voiceOwner) throw Object.assign(new Error('Stop the current voice conversation, then refresh Codex.'), { status: 409 });
+          const { configured } = await voiceSetup.check().catch(() => ({ configured: false }));
+          broadcast('voice-status', { configured });
+          voiceSaveBlocked();
+          if (voiceOwner) throw Object.assign(new Error('Stop the current voice conversation, then refresh Codex.'), { status: 409 });
+          const connection = await coordinator.refreshConnection();
+          return json(response, 200, { ...connection, voiceConfigured: configured });
+        }
         if (method === 'POST' && url.pathname === '/api/live/transcript') {
           if (typeof data.id !== 'string' || data.id.length > 200 || !Array.isArray(data.captions)) throw new Error('A voice session and captions are required.');
           const captions = data.captions.slice(-50).filter(item => ['user', 'assistant'].includes(item.role) && typeof item.text === 'string').map(item => ({ role: item.role, text: item.text.slice(0, 1000), start: Number(item.start) || 0, end: Number(item.end) || 0 }));
@@ -290,12 +329,14 @@ export async function createService({ repo, uiDir, stateDir, token = secret(), n
           return json(response, 200, { released: true });
         }
         if (method === 'POST' && url.pathname === '/api/live/session') {
-          if (voiceOwner && voiceOwner.clientId !== data.clientId) throw new Error(`Voice is already active in the ${voiceOwner.surface} window`);
+          voiceAvailable(); voiceSaveBlocked();
           if (typeof data.sdp !== 'string' || !data.sdp.trim() || typeof data.clientId !== 'string') throw new Error('A microphone connection is required');
-          const keys = parseEnv(await readFile(path.join(repo, '.env'), 'utf8').catch(() => ''));
-          const key = keys.OPENAI_API_KEY || keys.OPENAI_KEY || process.env.OPENAI_API_KEY;
-          if (!key) throw new Error('Add OPENAI_API_KEY to the repository .env, then press the nose again.');
-          voiceOwner = { clientId: data.clientId, surface: data.surface === 'chats' ? 'chats' : 'workspace' };
+          const { key } = await voiceSetup.key();
+          if (!key) throw new Error('Voice is not configured. Add a voice API key in Voice setup, then try Talk to Mak again.');
+          loginBlocked(); voiceAvailable(); voiceSaveBlocked();
+          if (coordinator.refreshPromise) throw Object.assign(new Error('Wait for the Codex connection refresh, then start voice.'), { status: 409 });
+          const reservation = { clientId: data.clientId, surface: data.surface === 'chats' ? 'chats' : 'workspace' };
+          voiceOwner = reservation;
           broadcast('voice-owner', { owner: voiceOwner });
           try {
             const result = await fetch('https://api.openai.com/v1/live/sessions', {
@@ -303,9 +344,9 @@ export async function createService({ repo, uiDir, stateDir, token = secret(), n
                 body: JSON.stringify({ session: voiceSession(settings), transport: { type: 'webrtc', sdp: data.sdp } }),
             });
             const value = await result.json().catch(() => ({}));
-            if (!result.ok) throw new Error(`OpenAI Live (${result.status}): ${value.error?.message || 'Session could not be started'}`);
+            if (!result.ok) throw new Error(`OpenAI Live (${result.status}): Voice session could not be started. Check the API key and API account access.`);
             return json(response, 201, value);
-          } catch (error) { voiceOwner = null; broadcast('voice-owner', { owner: null }); throw error; }
+          } catch (error) { if (voiceOwner === reservation) { voiceOwner = null; broadcast('voice-owner', { owner: null }); } throw error; }
         }
         throw Object.assign(new Error('Endpoint not found'), { status: 404 });
       }
@@ -337,7 +378,7 @@ export async function createService({ repo, uiDir, stateDir, token = secret(), n
         if (!ws.authenticated) {
           if (message.type !== 'auth' || !equalSecret(message.token, token)) return ws.close(1008, 'Authentication failed');
           ws.authenticated = true; ws.clientId = message.clientId; ws.surface = message.surface; clients.add(ws); clearTimeout(authTimer);
-          send(ws, 'connected', { sessions: sessions.list(), selectedId, coordinator: coordinator.state }); return;
+          send(ws, 'connected', { sessions: sessions.list(), selectedId, coordinator: coordinator.state, state: coordinator.state, account: coordinator.account, login: codexLogin.snapshot() }); return;
         }
         if (message.type === 'subscribe') {
           ws.sessionId = message.id;
@@ -358,12 +399,12 @@ export async function createService({ repo, uiDir, stateDir, token = secret(), n
   try { watcher = watch(path.join(repo, 'workspace', 'workspace.json'), () => broadcast('workspace-changed', {})); watcher.on('error', () => {}); } catch { /* Registry may be created after first setup. */ }
   const restoreTimer = restoreSessions ? setTimeout(() => sessions.restore().catch(error => sessions.emit('service-error', error)), 100) : null;
   return {
-    origin, contentOrigin: files.origin, token, sessions, coordinator, quick, workspace, files, projects, knowledge, integrations, mobile,
+    origin, contentOrigin: files.origin, token, sessions, coordinator, codexLogin, voiceSetup, quick, workspace, files, projects, knowledge, integrations, mobile,
     urls: { workspace: `${origin}/?desktop=1&surface=workspace&token=${token}`, chats: `${origin}/?desktop=1&surface=chats&token=${token}` },
       nativeMessage: event => nativeSettings.receive(event),
       async close() {
         if (closing) return; closing = true; mcp.close(); nativeSettings.close(); await files.writes.catch(() => {});
-      watcher?.close(); clearTimeout(restoreTimer); coordinator.close(); clearTimeout(settingsTimer); await saveSettings(); await transcriptSave; await quick.saves; await workspace.writes;
+      watcher?.close(); clearTimeout(restoreTimer); codexLogin.close(); coordinator.close(); clearTimeout(settingsTimer); await saveSettings(); await transcriptSave; await quick.saves; await workspace.writes; await voiceSetup.saves.catch(() => {});
       await mobile.close();
       for (const ws of wss.clients) ws.terminate();
       wss.close(); await sessions.close();

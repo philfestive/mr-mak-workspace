@@ -48,9 +48,11 @@ export function codexBinary(env = process.env) {
   }
   const js = path.join(npmRoot, 'codex', 'bin', 'codex.js');
   if (existsSync(js)) return { file: process.execPath, args: [js] };
-  const executable = commandPath('codex', env);
-  if (executable && !/\.(cmd|bat|ps1)$/i.test(executable)) return { file: executable, args: [] };
-  throw new Error('Codex CLI is not installed. Install it and sign in once to use Mr. Mak.');
+  // A PATH wrapper may precede a native CLI. Keep searching for an executable
+  // rather than rejecting that first wrapper and reporting a false absence.
+  const executable = resolveCommand('codex', env, undefined, ['.exe']);
+  if (executable) return { file: executable, args: [] };
+  throw new Error('Mr. Mak could not locate a native Codex executable for its connection. Check the Codex CLI path, then refresh again.');
 }
 
 export function terminalCommand(agent, { bypass = false, resumeId, nativeId, effort, opencodeMajor = 1 } = {}) {
@@ -84,8 +86,8 @@ export function terminalCommand(agent, { bypass = false, resumeId, nativeId, eff
   return wrapCommand(command.file, [...(command.args || []), ...args]);
 }
 
-export function childEnvironment(repo) {
-  const env = { ...process.env, TERM: 'xterm-256color', COLORTERM: 'truecolor' };
+export function childEnvironment(repo, inherited = process.env) {
+  const env = { ...inherited, TERM: 'xterm-256color', COLORTERM: 'truecolor' };
   // Forward only explicitly named MCP credentials. Voice and unrelated API keys
   // stay private to the service; CLI subscription authentication is unchanged.
   if (repo) {
@@ -101,4 +103,13 @@ export function childEnvironment(repo) {
 
 export function readDotEnv(file) {
   try { return readFileSync(file, 'utf8'); } catch { return ''; }
+}
+
+export function coordinatorEnvironment(repo, inherited = process.env) {
+  const env = childEnvironment(repo, inherited);
+  // The coordinator follows the CLI's cached login, not the host agent's token
+  // or the voice service's API key. CODEX_HOME still selects its intended profile.
+  const withheld = new Set(['OPENAI_API_KEY', 'OPENAI_KEY', 'CODEX_ACCESS_TOKEN', 'CODEX_SESSION_ID', 'CODEX_INTERNAL_ORIGINATOR_OVERRIDE']);
+  for (const key of Object.keys(env)) if (withheld.has(key.toUpperCase())) delete env[key];
+  return env;
 }

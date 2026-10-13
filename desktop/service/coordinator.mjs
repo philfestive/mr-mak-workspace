@@ -2,7 +2,7 @@ import { EventEmitter } from 'node:events';
 import { spawn } from 'node:child_process';
 import { createInterface } from 'node:readline';
 import path from 'node:path';
-import { codexBinary, childEnvironment } from './agents.mjs';
+import { codexBinary, coordinatorEnvironment } from './agents.mjs';
 import { publicError, readJson, saveJson } from './util.mjs';
 
 const tool = (name, description, properties = {}, required = []) => ({ type: 'function', name, description, inputSchema: { type: 'object', properties, required, additionalProperties: false } });
@@ -46,12 +46,16 @@ Do routine workspace operations yourself with the tools: open and read cards, in
 After a tool action, return a short factual result, without saying you consulted a coordinator, backend or another model. You are the one Mr. Mak persona. Clearly distinguish a running process, a terminal requesting attention, and a verified completed turn. Do not infer task success from silence. Read relevant context and skills only when needed for project questions and handoffs; avoid loading unrelated files for simple actions. You can change voice preferences directly with update_voice.`;
 
 export class Coordinator extends EventEmitter {
-  constructor({ repo, stateDir, execute, context, orientation = async () => '', settings = () => ({}) }) {
-    super(); Object.assign(this, { repo, stateDir, execute, context, orientation, settings });
+  constructor({ repo, stateDir, execute, context, orientation = async () => '', settings = () => ({}), spawnProcess = spawn, resolveBinary = codexBinary, authBusy = () => false }) {
+    super(); Object.assign(this, { repo, stateDir, execute, context, orientation, settings, spawnProcess, resolveBinary, authBusy });
     this.model = settings().coordinatorModel || null;
     this.pending = new Map(); this.nextId = 1; this.child = null; this.threadId = null;
     this.queue = Promise.resolve(); this.operations = new Map(); this.operationPromises = new Map();
     this.state = 'idle'; this.active = null; this.startPromise = null;
+    this.account = { status: 'unknown', type: null, email: null, planType: null };
+    this.refreshPromise = null;
+    this.closed = false;
+    this.needsRefresh = false;
   }
   async init() {
     const stored = await readJson(path.join(this.stateDir, 'operations.json'), []);
@@ -69,21 +73,79 @@ export class Coordinator extends EventEmitter {
     });
   }
   start() {
+    if (this.refreshPromise) return this.refreshPromise;
+    return this.ensureStarted();
+  }
+  ensureStarted(forRefresh = false) {
+    if (this.authBusy() && !forRefresh) return Promise.reject(Object.assign(new Error('Finish or cancel browser sign-in first.'), { status: 409 }));
+    if (this.closed) return Promise.reject(new Error('Mr. Mak is shutting down.'));
+    if (this.needsRefresh && !forRefresh) return Promise.reject(Object.assign(new Error('Refresh the Codex connection again before sending another request.'), { status: 409 }));
     if (this.threadId && this.child) return Promise.resolve();
-    if (!this.startPromise) this.startPromise = this.startInternal().finally(() => { this.startPromise = null; });
+    if (!this.startPromise) this.startPromise = this.startInternal().catch(error => { this.needsRefresh = true; this.setState('offline'); throw error; }).finally(() => { this.startPromise = null; });
     return this.startPromise;
+  }
+  async readAccount() {
+    const result = await this.rpc('account/read', { refreshToken: false });
+    const account = result.account;
+    // Only documented display fields reach the UI. Never return the RPC envelope.
+    this.account = {
+      status: account ? 'signed-in' : result.requiresOpenaiAuth ? 'signed-out' : 'unavailable',
+      type: typeof account?.type === 'string' ? account.type.slice(0, 40) : null,
+      email: typeof account?.email === 'string' ? account.email.slice(0, 200) : null,
+      planType: typeof account?.planType === 'string' ? account.planType.slice(0, 40) : null,
+    };
+    this.emit('account', this.account);
+    return this.account;
+  }
+  refreshConnection(forLogin = false) {
+    if (this.authBusy() && !forLogin) return Promise.reject(Object.assign(new Error('Finish or cancel browser sign-in first.'), { status: 409 }));
+    if (this.closed) return Promise.reject(new Error('Mr. Mak is shutting down.'));
+    if (this.refreshPromise) return this.refreshPromise;
+    if (this.active || this.operationPromises.size || this.startPromise || this.pending.size) {
+      return Promise.reject(Object.assign(new Error('Wait for Mr. Mak to finish the current request, then refresh Codex.'), { status: 409 }));
+    }
+    // Reserve the connection synchronously, before awaiting the outgoing process.
+    this.refreshPromise = this.refreshInternal().catch(error => { this.setState('offline'); throw error; }).finally(() => { this.refreshPromise = null; });
+    return this.refreshPromise;
+  }
+  async refreshInternal() {
+    this.needsRefresh = true;
+    this.threadId = null;
+    this.account = { status: 'unknown', type: null, email: null, planType: null };
+    this.emit('account', this.account);
+    this.setState('connecting');
+    const outgoing = this.child;
+    if (outgoing) {
+      await new Promise((resolve, reject) => {
+        const done = () => { clearTimeout(timer); outgoing.off('exit', done); resolve(); };
+        const timer = setTimeout(() => {
+          outgoing.off('exit', done);
+          reject(new Error('The previous Codex connection has not closed. Retry after it exits.'));
+        }, 8000);
+        outgoing.once('exit', done);
+        if (!outgoing.kill()) { clearTimeout(timer); outgoing.off('exit', done); reject(new Error('Could not close the previous Codex connection.')); }
+      });
+    }
+    this.threadId = null;
+    await this.ensureStarted(true);
+    this.needsRefresh = false;
+    return { ready: true, account: this.account };
   }
   async startInternal() {
     this.setState('connecting');
-    const command = codexBinary();
-    const env = childEnvironment(this.repo);
+    const command = this.resolveBinary();
+    const env = coordinatorEnvironment(this.repo);
     // Keep the user's Codex sign-in. The OpenAI voice key is never given to Codex.
-    this.child = spawn(command.file, [...command.args, 'app-server', '--stdio'], { cwd: this.repo, env, stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true });
+    const child = this.spawnProcess(command.file, [...command.args, 'app-server', '--stdio'], { cwd: this.repo, env, stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true });
+    this.child = child;
     this.child.stderr.on('data', () => {}); // Diagnostics may contain local account context.
     const lines = createInterface({ input: this.child.stdout });
-    lines.on('line', line => { try { this.message(JSON.parse(line)).catch(error => this.emit('error-detail', publicError(error))); } catch { /* Non-protocol diagnostics are not forwarded. */ } });
+    lines.on('line', line => { if (this.child !== child) return; try { this.message(JSON.parse(line)).catch(error => this.emit('error-detail', publicError(error))); } catch { /* Non-protocol diagnostics are not forwarded. */ } });
     const disconnected = error => {
+      if (this.child !== child) return;
       this.child = null; this.threadId = null; this.setState('offline');
+      if (this.account.status !== 'signed-out') this.account = { status: 'unknown', type: null, email: null, planType: null };
+      this.emit('account', this.account);
       for (const request of this.pending.values()) { clearTimeout(request.timer); request.reject(error); }
       this.pending.clear();
       this.active?.reject(error); this.active = null;
@@ -93,6 +155,8 @@ export class Coordinator extends EventEmitter {
     try {
       await this.rpc('initialize', { clientInfo: { name: 'mrmak_desktop', title: 'Mr. Mak Desktop', version: '0.1.0' }, capabilities: { experimentalApi: true } });
       this.send({ method: 'initialized', params: {} });
+      await this.readAccount();
+      if (this.account.status === 'signed-out') throw new Error('Sign in to Codex, then refresh the Codex connection in Mr. Mak.');
       const result = await this.rpc('thread/start', {
         cwd: this.repo, ...(this.model ? { model: this.model } : {}), baseInstructions: instructions + '\n\n' + await this.orientation(), dynamicTools: coordinatorTools,
         approvalPolicy: 'never', sandbox: 'read-only', ephemeral: true,
@@ -100,7 +164,7 @@ export class Coordinator extends EventEmitter {
       }, 60000);
       this.threadId = result.thread.id;
       this.setState('idle');
-    } catch (error) { this.child?.kill(); throw error; }
+    } catch (error) { if (this.child === child) child.kill(); throw error; }
   }
   async message(message) {
     if (message.id != null && !message.method) {
@@ -142,6 +206,9 @@ export class Coordinator extends EventEmitter {
     if (!id || typeof text !== 'string' || !text.trim() || text.length > 30000) return Promise.reject(new Error('A request ID and a non-empty message are required'));
     if (this.operationPromises.has(id)) return this.operationPromises.get(id);
     if (this.operations.has(id)) return Promise.resolve(this.operations.get(id));
+    if (this.authBusy()) return Promise.reject(Object.assign(new Error('Finish or cancel browser sign-in first.'), { status: 409 }));
+    if (this.refreshPromise) return Promise.reject(Object.assign(new Error('Codex is reconnecting. Send your request after the connection refresh finishes.'), { status: 409 }));
+    if (this.needsRefresh) return Promise.reject(Object.assign(new Error('Refresh the Codex connection again before sending another request.'), { status: 409 }));
     const request = this.queue.catch(() => {}).then(async () => {
       const operation = { id, text, ...(images.length ? { images } : {}), status: 'running', at: new Date().toISOString() };
       this.operations.set(id, operation); await this.save();
@@ -169,5 +236,5 @@ export class Coordinator extends EventEmitter {
     this.queue = request; this.operationPromises.set(id, request);
     return request.finally(() => this.operationPromises.delete(id));
   }
-  close() { this.child?.kill(); }
+  close() { this.closed = true; this.child?.kill(); }
 }

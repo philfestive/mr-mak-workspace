@@ -1,11 +1,15 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { api, onServiceEvent, useDesktop } from './client'
 import type { Settings } from './types'
 import { Icon } from './Icons'
 import ThemePicker from '../components/ThemePicker'
+import CodexConnection from './CodexConnection'
+import VoiceSetup from './VoiceSetup'
 
 type NativeSettings = { available: boolean; winKey: boolean; error?: string }
-export default function WorkspaceSettings({ onClose }: { onClose: () => void }) {
+export default function WorkspaceSettings({ onClose, focusVoice = false }: { onClose: () => void; focusVoice?: boolean }) {
+  const voiceSection = useRef<HTMLElement>(null)
+  useEffect(() => { if (focusVoice) voiceSection.current?.scrollIntoView({ block: 'start' }) }, [focusVoice])
   const { settings, repo } = useDesktop()
   const [native, setNative] = useState<NativeSettings>({ available: false, winKey: false })
   const [busy, setBusy] = useState(false)
@@ -33,6 +37,8 @@ export default function WorkspaceSettings({ onClose }: { onClose: () => void }) 
       <label>Terminal appearance<select disabled={busy} value={settings.terminalAppearance || 'focus'} onChange={event => void change({ terminalAppearance: event.target.value as Settings['terminalAppearance'] })}><option value="focus">Focus · clearer answers</option><option value="original">Original CLI colours</option></select></label>
       <label className="setting-toggle"><span>Bypass CLI permissions<small>Default for new chats.</small></span><input type="checkbox" checked={settings.defaultBypass} disabled={busy} onChange={event => void change({ defaultBypass: event.target.checked })} /></label>
     </section><section><h3>Mr. Mak</h3><label>Voice<select disabled={busy} value={settings.voiceName || 'cedar'} onChange={event => void change({ voiceName: event.target.value })}><option value="cedar">Cedar</option><option value="marin">Marin</option></select></label><label>Coordinator reasoning<select disabled={busy} value={settings.coordinatorEffort || 'medium'} onChange={event => void change({ coordinatorEffort: event.target.value as Settings['coordinatorEffort'] })}><option value="medium">Medium</option><option value="high">High</option></select></label><p>Voice changes apply to your next conversation.</p></section>
+      <section ref={voiceSection}><h3>Voice setup</h3><VoiceSetup /></section>
+      <section><h3>Codex connection</h3><CodexConnection /></section>
       <section><h3>Project</h3><p className="settings-repo">{repo}</p><p>Skills, knowledge and processes belong to this repository.</p></section>
       {error && <p className="desk-error-inline" role="alert">{error}</p>}
     </div></div>

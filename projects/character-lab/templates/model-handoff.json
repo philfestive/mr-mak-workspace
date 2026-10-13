@@ -1,0 +1,17 @@
+{
+  "schema": "mrmak.character-handoff/v1",
+  "character_id": "",
+  "revision_id": "",
+  "editable_sources": [],
+  "exports": [],
+  "receiver": {
+    "project": "",
+    "root": "",
+    "owner": "",
+    "task": "",
+    "consumer": ""
+  },
+  "state": "planned",
+  "evidence": [],
+  "notes": "Template only; populate for the selected model and receiver."
+}

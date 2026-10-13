@@ -1,6 +1,240 @@
 {
   "entities": [
     {
+      "id": "character-lab",
+      "title": "Character Lab",
+      "description": "Ideas through visual versions, 2D and 3D style studies, editable sources and named deliveries; one character catalog.",
+      "type": "group",
+      "category": "project",
+      "created": "2026-10-12",
+      "updated": "2026-10-13",
+      "folder": "2026-10-12_character-lab",
+      "steps": [
+        {
+          "name": "Overview",
+          "path": "overview.md",
+          "groupId": "overview"
+        },
+        {
+          "name": "Characters",
+          "path": "characters.html",
+          "groupId": "characters"
+        },
+        {
+          "name": "Lessons",
+          "path": "lessons.md",
+          "groupId": "reference"
+        },
+        {
+          "name": "Pipeline",
+          "path": "pipeline.md",
+          "groupId": "overview"
+        },
+        {
+          "name": "Styles",
+          "path": "styles.html",
+          "groupId": "reference"
+        },
+        {
+          "name": "Directory",
+          "path": "directory.md",
+          "groupId": "reference"
+        }
+      ],
+      "status": "active",
+      "pinned": true,
+      "defaultStep": 0,
+      "tabGroups": [
+        {
+          "id": "overview",
+          "name": "Overview"
+        },
+        {
+          "id": "characters",
+          "name": "Characters"
+        },
+        {
+          "id": "reference",
+          "name": "Reference"
+        }
+      ]
+    },
+    {
+      "id": "team-hub",
+      "title": "Workspace Home",
+      "description": "Refine selected lessons and ideas into a GDD, index and schemas before choosing a clean implementation.",
+      "type": "group",
+      "category": "project",
+      "created": "2026-10-12",
+      "updated": "2026-10-13",
+      "folder": "2026-10-12_workspace-home",
+      "steps": [
+        {
+          "name": "Home",
+          "path": "overview.md",
+          "groupId": "overview"
+        },
+        {
+          "name": "Projects",
+          "path": "agents.md",
+          "groupId": "define"
+        },
+        {
+          "name": "Tasks",
+          "path": "tasks.md",
+          "groupId": "build"
+        },
+        {
+          "name": "Decisions",
+          "path": "decisions.md",
+          "groupId": "define"
+        },
+        {
+          "name": "Notes",
+          "path": "handoffs.md",
+          "groupId": "build"
+        },
+        {
+          "name": "Intake",
+          "path": "intake.md",
+          "groupId": "refine"
+        },
+        {
+          "name": "Build focus",
+          "path": "focus.md",
+          "groupId": "overview"
+        },
+        {
+          "name": "Lane setup",
+          "path": "layout.md",
+          "groupId": "overview"
+        },
+        {
+          "name": "Questions",
+          "path": "questions.md",
+          "groupId": "refine"
+        },
+        {
+          "name": "GDD",
+          "path": "gdd-guide.md",
+          "groupId": "refine"
+        },
+        {
+          "name": "Schemas",
+          "path": "schema-guide.md",
+          "groupId": "define"
+        },
+        {
+          "name": "Results",
+          "path": "results.md",
+          "groupId": "build"
+        },
+        {
+          "name": "Peer handoff",
+          "path": "peer-handoff.md",
+          "groupId": "overview"
+        }
+      ],
+      "status": "active",
+      "pinned": true,
+      "defaultStep": 0,
+      "tabGroups": [
+        {
+          "id": "overview",
+          "name": "Overview",
+          "defaultStep": 0
+        },
+        {
+          "id": "refine",
+          "name": "Refine",
+          "defaultStep": 5
+        },
+        {
+          "id": "define",
+          "name": "Define",
+          "defaultStep": 1
+        },
+        {
+          "id": "build",
+          "name": "Build",
+          "defaultStep": 2
+        }
+      ]
+    },
+    {
+      "id": "mcp-setup",
+      "title": "MCP Setup and Agent Waves",
+      "description": "Observed connections, shared core and role profiles, six setup waves, Git practice and future-agent startup.",
+      "type": "group",
+      "category": "dev",
+      "created": "2026-10-12",
+      "updated": "2026-10-13",
+      "folder": "2026-10-12_mcp-setup",
+      "steps": [
+        {
+          "name": "Overview",
+          "path": "overview.md",
+          "groupId": "overview"
+        },
+        {
+          "name": "Inventory",
+          "path": "inventory.md",
+          "groupId": "readiness"
+        },
+        {
+          "name": "Target setup",
+          "path": "setup-plan.md",
+          "groupId": "define"
+        },
+        {
+          "name": "Delivery waves",
+          "path": "waves.md",
+          "groupId": "delivery"
+        },
+        {
+          "name": "Staffing and accuracy",
+          "path": "staffing.md",
+          "groupId": "delivery"
+        },
+        {
+          "name": "Version control",
+          "path": "version-control.md",
+          "groupId": "define"
+        },
+        {
+          "name": "Agent startup",
+          "path": "agent-startup.md",
+          "groupId": "delivery"
+        },
+        {
+          "name": "Reviews",
+          "path": "reviews.md",
+          "groupId": "readiness"
+        }
+      ],
+      "status": "active",
+      "pinned": false,
+      "defaultStep": 0,
+      "tabGroups": [
+        {
+          "id": "overview",
+          "name": "Overview"
+        },
+        {
+          "id": "readiness",
+          "name": "Readiness"
+        },
+        {
+          "id": "define",
+          "name": "Define"
+        },
+        {
+          "id": "delivery",
+          "name": "Delivery"
+        }
+      ]
+    },
+    {
       "id": "my-dream-game",
       "title": "My Dream Game",
       "description": "Mr. Mak 64: a small Sky Islands adventure, with character studies, world layouts and a development board.",
@@ -126,6 +360,65 @@
       "status": "active",
       "pinned": false,
       "sample": true
+    },
+    {
+      "id": "workspace-organization",
+      "title": "Sources & Output",
+      "description": "Clear macro goals, mobile 3D design questions, retained examples, source routes and drift prevention.",
+      "type": "group",
+      "category": "dev",
+      "created": "2026-10-12",
+      "updated": "2026-10-13",
+      "folder": "2026-10-12_workspace-organization",
+      "steps": [
+        {
+          "name": "Macro goals",
+          "path": "macro-goals.md",
+          "groupId": "overview"
+        },
+        {
+          "name": "Examples",
+          "path": "examples.md",
+          "groupId": "sources"
+        },
+        {
+          "name": "Performance",
+          "path": "performance.md",
+          "groupId": "define"
+        },
+        {
+          "name": "Drift plan",
+          "path": "drift-plan.md",
+          "groupId": "define"
+        },
+        {
+          "name": "Setup review",
+          "path": "review.md",
+          "groupId": "sources"
+        },
+        {
+          "name": "Output standard",
+          "path": "standard.md",
+          "groupId": "define"
+        }
+      ],
+      "status": "active",
+      "pinned": false,
+      "defaultStep": 0,
+      "tabGroups": [
+        {
+          "id": "overview",
+          "name": "Overview"
+        },
+        {
+          "id": "sources",
+          "name": "Sources"
+        },
+        {
+          "id": "define",
+          "name": "Define"
+        }
+      ]
     }
   ]
 }

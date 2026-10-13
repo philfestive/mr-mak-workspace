@@ -1,0 +1,44 @@
+.codex-connection {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--hairline);
+  font-size: 11px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.codex-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.codex-actions a { color: var(--text); text-decoration: underline; }
+.codex-connection p { margin: 6px 0; color: var(--text-dim); }
+.codex-connection .codex-account { color: var(--text); }
+.codex-connection button { max-width: 100%; white-space: normal; }
+.desktop-root .codex-connection .desk-secondary {
+  background: var(--surface-2);
+  border-color: var(--hairline-strong);
+  color: var(--text);
+}
+.workspace-settings .codex-connection { padding: 0; border: 0; }
+.codex-connection.compact { padding: 8px 0 0; border: 0; }
+
+.desktop-root .voice-dock.chats .voice-panel { max-width: calc(100vw - 66px); }
+.voice-settings > span { min-width: 0; max-width: 55%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.desktop-root .voice-error:has(.codex-connection.compact) {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px;
+}
+.desktop-root .voice-error:has(.codex-connection.compact) > span { min-width: 0; color: var(--text); }
+.voice-error > .codex-connection.compact { grid-column: 1 / -1; }
+
+.codex-notice { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+.codex-dock-connection { padding: 8px 16px; border-top: 1px solid var(--hairline); font-size: 11px; }
+.codex-dock-connection summary { cursor: pointer; color: var(--text-dim); }
+.desktop-root .voice-error:has(.voice-setup-action) { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+.voice-setup-action { grid-column: 1 / -1; justify-self: start; }
+.voice-settings-dialog { min-width: 0; max-width: 100%; }
+.voice-settings-dialog > .workspace-settings { width: min(460px, calc(100vw - 32px)); max-height: calc(100vh - 32px); border: 1px solid var(--hairline-strong); border-radius: 12px; background: var(--surface); color: var(--text); }
+.voice-settings-dialog .files-scroll { min-height: 0; overflow-y: auto; }
+.voice-setup input { width: 100%; min-width: 0; }
+.voice-setup a { color: var(--text); text-decoration: underline; }
+
+.desktop-root .voice-error:has(.voice-setup-action) { background: var(--surface-2); border-color: var(--hairline-strong); color: var(--text); }

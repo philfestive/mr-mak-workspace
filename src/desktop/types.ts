@@ -14,13 +14,15 @@ export interface Notice { id: string; sessionId: string; name: string; kind: str
 export interface Operation { id: string; text: string; status: string; result?: string; at: string; images?: string[] }
 export interface Settings { defaultAgent: AgentId; defaultBypass: boolean; terminalFontSize?: number; terminalAppearance?: 'focus' | 'original'; workspaceTheme?: 'dark' | 'light' | 'system'; workspaceRoute?: string | null; selectedId?: string | null; coordinatorEffort?: 'medium' | 'high'; voiceName?: string; voiceStyle?: string }
 export interface VoiceOwner { clientId: string; surface: 'chats' | 'workspace' }
+export interface CodexLogin { status: 'idle' | 'starting' | 'waiting' | 'completing' | 'cancelling' | 'complete' | 'cancelled' | 'failed'; url: string | null; error: string | null; account?: CodexAccount }
+export interface CodexAccount { status: 'unknown' | 'signed-in' | 'signed-out' | 'unavailable'; type: string | null; email: string | null; planType: string | null }
 export interface FileEntry { name: string; path: string; directory: boolean; size: number; modifiedAt: string | null }
 export interface Folder { path: string; parent: string; entries: FileEntry[]; truncated: boolean; mode: string }
 export interface Preview { path: string; name: string; size: number; kind: 'document' | 'image' | 'video' | 'audio' | 'text' | 'unsupported'; url?: string; text?: string; revision?: string; reason?: string }
 export interface DesktopState {
   ready: boolean; connected: boolean; error: string | null; repo: string; contentBase: string
   agents: AgentInfo[]; sessions: ChatSession[]; selectedId: string | null; notices: Notice[]
-  settings: Settings; coordinator: string; voice: { configured: boolean; owner: VoiceOwner | null }
+  settings: Settings; coordinator: string; codexAccount: CodexAccount; codexLogin: CodexLogin; voice: { configured: boolean; owner: VoiceOwner | null }
   operations: Operation[]; preview: Preview | null
   voiceHistory: { id: string; at: string; captions: { role: 'user' | 'assistant'; text: string; start: number; end: number }[] }[]
 }
@@ -28,4 +30,5 @@ export interface ServiceEvent {
   type: string; id?: string; data?: string; sequence?: number; session?: ChatSession; sessions?: ChatSession[]
   selectedId?: string; sessionId?: string; state?: string; error?: string; notice?: Notice
   operation?: Operation; settings?: Settings; owner?: VoiceOwner | null; window?: string; route?: string; preview?: Preview
+  account?: CodexAccount; configured?: boolean; login?: CodexLogin
 }

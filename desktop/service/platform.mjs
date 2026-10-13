@@ -29,10 +29,10 @@ export function commandExtensions() {
   return isWindows ? ['.exe', '.cmd', '.bat', '.ps1', ''] : [''];
 }
 
-export function resolveCommand(name, env = process.env, home = os.homedir()) {
+export function resolveCommand(name, env = process.env, home = os.homedir(), extensions = commandExtensions()) {
   if (path.isAbsolute(name) && existsSync(name)) return name;
   for (const folder of [...String(env.PATH || env.Path || '').split(path.delimiter), ...commandSearchRoots(env, home)]) {
-    for (const ext of commandExtensions()) {
+    for (const ext of extensions) {
       const candidate = path.join(folder, name.toLowerCase().endsWith(ext) && ext ? name : name + ext);
       if (existsSync(candidate)) return candidate;
     }

@@ -33,3 +33,19 @@ New HTML reports can begin with:
 
 The relative paths above assume a folder immediately inside `workspace/`.
 Adjust them for nested reports. All sample pages follow the same shared style.
+
+## Internal document navigation
+
+For links to registered Workspace steps in desktop Markdown reports, use the
+existing app route, #/<card-id>/<step-index>, rather than the raw .md URL. Read
+workspace/workspace.json to find the exact card and step; keep tab-file and media
+paths relative. Raw document links open externally in the desktop app.
+
+Preserve registered step indexes: append new steps rather than inserting or
+reordering them. Group documents with tabGroups and step.groupId without changing
+their global indexes. Re-read the registry before integrating another lane.
+
+Verify by clicking: the expected tab must become selected, the preview must show
+the target document, and no external window should open. An HTTP 200 check alone
+does not verify navigation. Check mobile reader behavior separately if changing
+its navigation; its UI does not use the desktop hash router.
