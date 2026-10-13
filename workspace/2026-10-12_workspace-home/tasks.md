@@ -14,17 +14,18 @@ the assistant handling your request updates relevant entries. Last updated:
 
 ## Next actions
 
-**T001:** the grouped Refiner UI, CLI lookup repair and browser sign-in are
-installed and verified. The owner observed successful refresh/sign-in and a
-responding Mr. Mak text chat. The new **Settings -> Voice setup**, Set up voice
-link and recovery-message fixes are built, tested and independently reviewed;
-the owner approved installation/restart and the reviewed 122-file fork checkpoint.
-Confirm the install receipt and published workspace-customizations branch;
-then enter the separately supplied API key and explicitly check live audio.
-Presence checks do not prove live voice access. Five planned chat labels are
-present; Setup2 still needs REF-10 - Sources & Design through live controls.
-See [Lane setup](#/team-hub/7), [Peer handoff](#/team-hub/12) and the latest
-three-agent review/approved delivery in [Notes](#/team-hub/4).
+**T001:** the grouped Refiner UI, CLI lookup repair, browser sign-in and new
+**Settings -> Voice setup** are installed and verified. Talk to Mak has a
+Set up voice action, and old connection completion messages no longer replay.
+The install receipt confirms all eight saved conversations preserved, zero
+restore errors, and matching service/UI hashes. The reviewed 122-file source
+checkpoint is committed and pushed to workspace-customizations on the owner's
+philfestive/mr-mak-workspace fork. Next: enter the separately supplied API key in
+Voice setup and explicitly check live audio; presence checks alone do not prove
+voice access. Five planned chat labels are present; Setup2 still needs
+REF-10 - Sources & Design through live controls.
+See [Lane setup](#/team-hub/7), [Peer handoff](#/team-hub/12) and the verified
+installation/publication record in [Notes](#/team-hub/4).
 
 **T002:** after Refiner setup, choose the product through focused questions.
 Record its identity in Build focus and refine the owning GDD. Define the project

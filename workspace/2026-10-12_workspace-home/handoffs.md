@@ -44,11 +44,11 @@ voice/provider requests. Inspected narrow Settings and wide Chats captures.
 Local UI evidence: .cache/voice-ui-OkVBan/verification.json. This ignored receipt
 is retained on this PC; the test runner itself is part of the checkpoint.
 
-The new voice setup/recovery update is prepared in source and has **not yet been
-installed**. The earlier browser sign-in update remains the verified installed
-version. Installation needs a new owner-approved graceful restart. Next: apply
-the verified bounded update, then enter the voice key in Settings and explicitly
-start Talk to Mak. Presence checks do not establish key validity or live audio.
+At the source-review checkpoint, the new voice setup/recovery update was
+prepared and **not yet installed**. The earlier browser sign-in update was the
+verified installed version; applying the new update needed an approved restart.
+The completed delivery is recorded below. Presence checks do not establish key
+validity or live audio.
 
 Git review verified origin philfestive/mr-mak-workspace and the branch
 workspace-customizations against the live origin. The application checkpoint
@@ -77,6 +77,28 @@ the local install receipt establishes installed/runtime completion:
 The helper checks exact runtime bindings, file hashes and eight saved conversation
 identities, and cannot report complete with recorded conversation restore errors.
 No voice key or live provider test is part of this installation.
+
+Installed voice setup and fork checkpoint verified - 2026-10-13: the approved
+update receipt reports complete, installed and restarted. Both service files
+and all 27 compiled UI files match their prepared hashes. All eight saved
+conversation identities and seven native IDs were preserved, with zero recorded
+restore errors. The temporary scheduled task removed itself. The running service
+is owned by the installed app and responds HTTP 200 for UI and health.
+
+The local Codex probe initialized the native CLI and read a signed-in ChatGPT
+account without a model turn or login change. No account email or credentials
+are retained here. Settings -> Voice setup and Talk to Mak -> Set up voice are
+now installed. Enter the separately supplied key in that masked field, save it,
+then explicitly start Talk to Mak. Live voice has not yet been proved.
+
+The reviewed 122-file source checkpoint was committed and pushed as d77ea06 to
+philfestive/mr-mak-workspace, branch workspace-customizations; the live remote
+matched that commit. The required whitespace gate passed after the owner
+explicitly approved removing one extra final newline from 01-codex.md. Meaningful
+report content and the raw art reference were preserved. The 174 unlinked peer
+sources stay local for their owners; credentials, runtime data and private
+receipts remain excluded from Git. This verification completes the same approved
+delivery; it does not authorize unrelated commits, pushes or restarts.
 
 ## 2026-10-12 - T001: solo wording and link repair
 
